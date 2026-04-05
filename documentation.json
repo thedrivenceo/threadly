@@ -72,7 +72,7 @@
             "openapi": "openapi.yaml"
           }
         ],
-        "public": false
+        "public": true
       },
       {
         "tab": "Help Center",
