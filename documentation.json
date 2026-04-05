@@ -47,6 +47,17 @@
             ]
           },
           {
+            "group": "Teams",
+            "icon": "users",
+            "pages": [
+              {
+                "title": "Overview",
+                "path": "teams/overview",
+                "icon": "users"
+              }
+            ]
+          },
+          {
             "group": "Integrations",
             "icon": "plug",
             "pages": [

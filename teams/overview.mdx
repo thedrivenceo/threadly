@@ -1,0 +1,161 @@
+---
+title: "Teams"
+description: "Manage team members with role-based access control"
+---
+
+## Overview
+
+Every Threadflow account automatically creates a team when the user registers. The account creator becomes the Owner with full access. Owners and Managers can invite additional team members with different permission levels.
+
+## Roles
+
+Threadflow supports three team roles with escalating permissions.
+
+| Permission | Owner | Manager | Member |
+|-----------|-------|---------|--------|
+| Create and schedule posts | Yes | Yes | Yes |
+| View all content | Yes | Yes | Yes |
+| View analytics | Yes | Yes | Yes |
+| View Team page | Yes | Yes | No |
+| Add/remove team members | Yes | Yes | No |
+| Change member roles | Yes | Yes (not owners) | No |
+| Add/remove Threads accounts | Yes | Yes | No |
+| View Billing | Yes | No | No |
+| View Admin Dashboard | Yes | No | No |
+
+### Owner
+
+The account creator. Has full access to everything including billing, team management, and admin features. Cannot be removed or demoted.
+
+### Manager
+
+Can manage team members and Threads account connections. Cannot access billing information or the admin dashboard. Useful for team leads who need to onboard new members.
+
+### Member
+
+Can create, schedule, and publish content. Cannot see the Team page, billing information, or manage Threads account connections. Ideal for content creators who just need to write and schedule.
+
+## Accessing Team Management
+
+Team management is accessed through the **UserMenu** at the bottom left of the sidebar.
+
+<Steps>
+  <Step title="Click your profile" icon="user" title-type="p">
+    Click your avatar and name at the bottom of the sidebar to open the UserMenu popover.
+  </Step>
+
+  <Step title="Select Team" icon="users" title-type="p">
+    Click "Team" in the popover menu. This option is only visible to Owners and Managers.
+  </Step>
+</Steps>
+
+## Inviting Team Members
+
+<Steps>
+  <Step title="Enter the email address" icon="mail" title-type="p">
+    Type the email address of the person you want to invite in the invite form at the top of the Team page.
+  </Step>
+
+  <Step title="Select a role" icon="shield" title-type="p">
+    Choose between **Member** (content only) or **Manager** (content + team management) from the dropdown.
+  </Step>
+
+  <Step title="Click Add" icon="user-plus" title-type="p">
+    Click the Add button to invite the user.
+
+    - **New user (no account):** Receives an invite email with a link to set their password and join Threadflow.
+    - **Existing user:** Added directly to your team. They will see the team content on their next login.
+  </Step>
+</Steps>
+
+<Callout kind="info">
+  New users receive an email from Supabase with instructions to set their password. Once they complete setup, they are automatically part of your team.
+</Callout>
+
+## Seat Limits
+
+The number of team members you can have depends on your plan.
+
+| Plan | Total Seats (including owner) |
+|------|------------------------------|
+| Free | 1 (owner only) |
+| Pro | 2 (owner + 1 member) |
+| Team | 6 (owner + 5 members) |
+
+The Team page displays a seat counter showing how many seats are used and how many remain.
+
+## Managing Members
+
+Owners and Managers can perform the following actions on team members:
+
+- **Change role:** Use the dropdown on each member row to switch between Member and Manager
+- **Remove member:** Click the trash icon to remove a member from the team
+
+<Callout kind="alert">
+  Owners cannot be removed or have their role changed. There is always exactly one owner per team.
+</Callout>
+
+## Database Schema
+
+### teams
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| name | text | Team name (default: "My Team") |
+| owner_id | uuid | References auth.users |
+| created_at | timestamptz | When the team was created |
+
+### team_members
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| team_id | uuid | References teams |
+| user_id | uuid | References auth.users |
+| role | text | "owner", "manager", or "member" |
+| invited_by | uuid | References auth.users (who sent the invite) |
+| joined_at | timestamptz | When the member joined |
+
+<Callout kind="tip">
+  A database trigger automatically creates a team record and sets the user as owner whenever a new user signs up.
+</Callout>
+
+## Implementation Details
+
+### useTeam Hook
+
+The `useTeam` hook provides team data and permissions throughout the app.
+
+```typescript
+import { useTeam } from '@/hooks/useTeam';
+
+const { team, role, permissions, members, addMember, removeMember, updateRole } = useTeam();
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| team | Team or null | Current team info |
+| role | "owner" or "manager" or "member" | Current user's role |
+| permissions | TeamPermissions | Boolean flags for each permission |
+| members | TeamMember[] | All team members |
+| addMember | function | Invite a new member |
+| removeMember | function | Remove a member |
+| updateRole | function | Change a member's role |
+
+### UserMenu Component
+
+The sidebar footer uses a `UserMenu` popover that conditionally shows menu items based on team role:
+
+- **My Profile** and **Settings**: Visible to everyone
+- **Team**: Visible to Owners and Managers
+- **Billing**: Visible to Owners only
+- **Log out**: Visible to everyone
+
+### team-invite Edge Function
+
+Handles member invitations via Supabase's invite system.
+
+- **New users**: Calls `supabase.auth.admin.inviteUserByEmail()` which sends a setup email
+- **Existing users**: Returns the user ID for direct addition to team_members
+- **Authentication**: Requires a valid JWT from the inviting user
