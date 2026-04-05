@@ -1,0 +1,144 @@
+---
+title: "Outgoing Webhook (Create Post)"
+description: "API reference for the webhook-create-post endpoint that allows external tools to push content into Threadflow's Content Bank."
+---
+
+## Overview
+
+The `webhook-create-post` edge function allows external tools (Make, Zapier, custom scripts) to push content directly into Threadflow's Content Bank.
+
+**Endpoint:** `POST https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post`
+
+## Authentication
+
+Every request must include the `x-webhook-secret` header with a value matching the `WEBHOOK_SECRET` Supabase secret.
+
+<ParamField header="x-webhook-secret" param-type="string" required="true" deprecated="false">
+  Shared secret for authenticating webhook requests. Must match the `WEBHOOK_SECRET` stored in Supabase secrets.
+</ParamField>
+
+<ParamField header="Content-Type" param-type="string" required="true" deprecated="false">
+  Must be `application/json`.
+</ParamField>
+
+## Request body
+
+<ParamField body="title" param-type="string" required="true" deprecated="false">
+  Title for the content item in the Content Bank.
+</ParamField>
+
+<ParamField body="content" param-type="string" required="true" deprecated="false">
+  The content body text.
+</ParamField>
+
+<ParamField body="source_url" param-type="string" required="false" deprecated="false">
+  Original URL where the content was found or published.
+</ParamField>
+
+## Example request
+
+<Request show-lines="true" tabs="cURL,JavaScript,Python">
+  ```bash
+  curl -X POST https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post \
+    -H "Content-Type: application/json" \
+    -H "x-webhook-secret: your_webhook_secret" \
+    -d '{
+      "title": "LinkedIn post about content systems",
+      "content": "Your content systems should work harder than you do...",
+      "source_url": "https://linkedin.com/post/123"
+    }'
+  ```
+
+  ```javascript
+  const response = await fetch(
+    'https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-webhook-secret': process.env.WEBHOOK_SECRET
+      },
+      body: JSON.stringify({
+        title: 'LinkedIn post about content systems',
+        content: 'Your content systems should work harder than you do...',
+        source_url: 'https://linkedin.com/post/123'
+      })
+    }
+  );
+  ```
+
+  ```python
+  import requests
+
+  response = requests.post(
+      'https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post',
+      headers={
+          'Content-Type': 'application/json',
+          'x-webhook-secret': 'your_webhook_secret'
+      },
+      json={
+          'title': 'LinkedIn post about content systems',
+          'content': 'Your content systems should work harder than you do...',
+          'source_url': 'https://linkedin.com/post/123'
+      }
+  )
+  ```
+</Request>
+
+## Response
+
+<Response show-lines="true" tabs="201 Created,401 Unauthorized,400 Bad Request">
+  ```json
+  {
+    "success": true,
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+  ```
+
+  ```json
+  {
+    "error": "Invalid webhook secret"
+  }
+  ```
+
+  ```json
+  {
+    "error": "Missing required field: content"
+  }
+  ```
+</Response>
+
+## Response fields
+
+<ResponseField name="success" field-type="boolean" required="true" deprecated="false">
+  `true` if the content was saved to the Content Bank.
+</ResponseField>
+
+<ResponseField name="id" field-type="string" required="true" deprecated="false">
+  UUID of the newly created content_uploads record.
+</ResponseField>
+
+<ResponseField name="error" field-type="string" required="false" deprecated="false">
+  Error message if the request failed.
+</ResponseField>
+
+## Use cases
+
+| Tool | Automation |
+|------|-----------|
+| Make | When a new blog post is published, send the title and excerpt to the Content Bank |
+| Zapier | When a tweet is bookmarked, push it to Threadflow as inspiration |
+| Custom script | Batch import content from a spreadsheet or RSS feed |
+
+## Error handling
+
+| Status | Meaning |
+|--------|---------|
+| 201 | Content saved successfully |
+| 400 | Missing required fields (title or content) |
+| 401 | Invalid or missing webhook secret |
+| 500 | Internal server error |
+
+<Callout kind="tip">
+  When building automations, store the returned `id` so you can track which content items were pushed from external tools.
+</Callout>

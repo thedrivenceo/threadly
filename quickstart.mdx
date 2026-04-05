@@ -1,58 +1,89 @@
 ---
-title: Quickstart
-description: Minimal steps to customize this sample starter kit.
+title: "Quickstart"
+description: "Get Threadflow running locally and connected to all required services."
 ---
-## Overview
 
-<Callout kind="alert" collapsed="false">
-  This site ships with placeholder content. Use this quickstart to replace it with your real product docs.
-</Callout>
+## Prerequisites
 
-## 1. Update a page
+Before you start, make sure you have:
+
+- Node.js 18+ and npm
+- A Supabase account and project
+- A Meta Developer account with a Threads app configured
+- An Anthropic API key for Claude
+
+## Setup
 
 <Steps>
-  <Step title="Edit introduction" icon="edit" title-type="p">
-    Replace the sample introduction with a concise overview of your product and the key actions you want new users to take first.
+  <Step title="Clone the repository" icon="git-branch" title-type="p">
+    ```bash
+    git clone <your-repo-url>
+    cd threadflow
+    npm install
+    ```
   </Step>
 
-  <Step title="Preview your change" icon="monitor" title-type="p">
-    Use your dashboard board editor to confirm the updated introduction looks and reads as expected.
+  <Step title="Configure environment variables" icon="settings" title-type="p">
+    Create a `.env` file in the project root. Never commit this file.
+
+    ```bash title=".env"
+    VITE_SUPABASE_URL=https://xaoodbhmrkpcweedvoev.supabase.co
+    VITE_SUPABASE_ANON_KEY=your_anon_key
+    ```
+
+    <Callout kind="danger">
+      Never hardcode API keys in source files. All secrets must stay in `.env` or Supabase secrets.
+    </Callout>
+  </Step>
+
+  <Step title="Set Supabase secrets" icon="lock" title-type="p">
+    These secrets are required by Edge Functions. Set them via the Supabase CLI or dashboard.
+
+    ```bash
+    supabase secrets set ANTHROPIC_API_KEY=your_anthropic_key
+    supabase secrets set THREADS_APP_ID=your_meta_app_id
+    supabase secrets set THREADS_APP_SECRET=your_meta_app_secret
+    supabase secrets set THREADS_REDIRECT_URI=https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/threads-auth-callback
+    supabase secrets set WEBHOOK_SECRET=your_webhook_secret
+    ```
+  </Step>
+
+  <Step title="Start the dev server" icon="play" title-type="p">
+    ```bash
+    npm run dev
+    ```
+
+    The app will be available at `http://localhost:5173`.
+  </Step>
+
+  <Step title="Connect your Threads account" icon="at-sign" title-type="p">
+    1. Sign up or log in to Threadflow
+    2. Go to **Settings** and click **Connect Threads**
+    3. Authorize the app via Meta's OAuth flow
+    4. Your Threads profile data will sync automatically
   </Step>
 </Steps>
 
-## 2. Add a new page
+## Verify the setup
 
-<Steps>
-  <Step title="Add a page" icon="file-text" title-type="p">
-    Create a new `page` by clicking on the + button from the left navigation bar of dashboard. If you are using git, create the .mdx file and add to navigation bar using documentation.json
-  </Step>
-</Steps>
+After connecting your Threads account, confirm everything works:
 
-## Example onboarding flow (replace with yours)
-
-1. Sign up for an account and verify your email.
-
-2. Create your first workspace, project, or environment.
-
-3. Add one integration or data source to connect your existing tools.
-
-4. Complete a guided action (for example, run your first job or publish your first resource).
-
-5. Invite a teammate and assign a basic role or permission.
-
-## 3. Connect API Reference (optional)
-
-If you have an API, replace `openapi.yaml` with your real OpenAPI file. If you do not need an API reference, remove that tab either from dashboard or  `documentation.json`.
+| Check | How to verify |
+|-------|--------------|
+| Auth | You can sign up, log in, and see the dashboard |
+| Threads connection | Your Threads username appears in Settings |
+| AI generation | Create a post and use the "Generate with AI" option |
+| Scheduling | Schedule a post and confirm it appears in the calendar |
+| Publishing | Publish a test post directly to Threads |
 
 ## Next steps
 
 <Columns cols="2">
-  <Card title="Core Concepts" href="/concepts" icon="layers" horizontal="false">
-    Keep the mental model simple and easy to scan.
+  <Card title="Architecture overview" href="/architecture/overview" icon="layers" horizontal="false">
+    Understand how the frontend, Supabase, and Threads API fit together.
   </Card>
 
-  <Card title="Authentication" href="/authentication" icon="lock" horizontal="false">
-    Add your real auth flows and security notes.
+  <Card title="Edge Functions" href="/edge-functions/overview" icon="terminal" horizontal="false">
+    Explore the 15 serverless functions that power Threadflow.
   </Card>
 </Columns>
-

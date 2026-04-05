@@ -1,0 +1,210 @@
+---
+title: "Threads Integration Functions"
+description: "Documentation for all threads-* edge functions: OAuth, publishing, profile, insights, replies, mentions, disconnect, and webhook."
+---
+
+## Overview
+
+Nine edge functions handle the full Threads API integration. They cover the complete lifecycle from connecting an account to publishing content and tracking engagement.
+
+## threads-auth-login
+
+Initiates the Threads OAuth flow by redirecting the user to Meta's authorization page.
+
+**Endpoint:** `GET /functions/v1/threads-auth-login`
+
+**Auth:** None (public redirect)
+
+### Behavior
+
+1. Constructs the Meta OAuth URL with app ID, redirect URI, and required scopes
+2. Returns a 302 redirect to Meta's authorization page
+
+### Requested scopes
+
+- `threads_basic`
+- `threads_content_publish`
+- `threads_read_replies`
+- `threads_manage_insights`
+- `threads_manage_replies`
+
+## threads-auth-callback
+
+Handles the OAuth callback from Meta after the user authorizes the app.
+
+**Endpoint:** `GET /functions/v1/threads-auth-callback`
+
+**Auth:** None (Meta redirect)
+
+### Parameters
+
+<ParamField query="code" param-type="string" required="true" deprecated="false">
+  Authorization code from Meta, exchanged for an access token.
+</ParamField>
+
+### Behavior
+
+1. Receives the authorization code from Meta
+2. Exchanges it for a short-lived token
+3. Exchanges the short-lived token for a long-lived token (60-day expiry)
+4. Fetches the user's Threads profile (username, display name, avatar)
+5. Upserts the `threads_profiles` row with token and profile data
+6. Redirects the user back to the app
+
+## threads-profile
+
+Returns the authenticated user's Threads profile data from the database.
+
+**Endpoint:** `GET /functions/v1/threads-profile`
+
+**Auth:** User JWT
+
+### Response
+
+```json
+{
+  "threads_user_id": "123456789",
+  "username": "yourhandle",
+  "display_name": "Your Name",
+  "profile_picture_url": "https://..."
+}
+```
+
+## threads-publish
+
+Publishes a post or thread to the Threads platform.
+
+**Endpoint:** `POST /functions/v1/threads-publish`
+
+**Auth:** User JWT
+
+### Request
+
+<ParamField body="post_id" param-type="string" required="true" deprecated="false">
+  UUID of the post to publish from the posts table.
+</ParamField>
+
+### Behavior for single posts
+
+1. Fetches the post content from the database
+2. Retrieves the user's Threads access token
+3. Creates a media container via the Threads API
+4. Publishes the container
+5. Updates the post status to `published`
+
+### Behavior for threads (multi-post)
+
+1. Fetches all posts sharing the same `thread_id`, ordered by `thread_order`
+2. Creates a media container for each post
+3. Creates a carousel container referencing all child containers
+4. Publishes the carousel
+5. Updates all posts in the thread to `published`
+
+### Response
+
+<Response show-lines="true" tabs="200 Success,400 Error">
+  ```json
+  {
+    "success": true,
+    "threads_post_id": "987654321",
+    "permalink": "https://threads.net/..."
+  }
+  ```
+
+  ```json
+  {
+    "error": "No Threads account connected"
+  }
+  ```
+</Response>
+
+## threads-insights
+
+Fetches engagement metrics for published posts from the Threads API.
+
+**Endpoint:** `GET /functions/v1/threads-insights`
+
+**Auth:** User JWT
+
+### Available metrics
+
+| Metric | Description |
+|--------|-------------|
+| views | Number of times the post was viewed |
+| likes | Number of likes received |
+| replies | Number of replies |
+| reposts | Number of reposts |
+| quotes | Number of quote posts |
+
+These metrics power the recommendation engine that calculates:
+- Best day of week to post
+- Best time of day to post
+- Optimal post length analysis
+
+## threads-replies
+
+Fetches replies to the authenticated user's posts.
+
+**Endpoint:** `GET /functions/v1/threads-replies`
+
+**Auth:** User JWT
+
+### Response
+
+Returns an array of reply objects from the Threads API, including reply text, author, and timestamp.
+
+## threads-mentions
+
+Fetches posts where the authenticated user is mentioned.
+
+**Endpoint:** `GET /functions/v1/threads-mentions`
+
+**Auth:** User JWT
+
+### Response
+
+Returns an array of mention objects. Mentions also arrive in real time via the [threads-webhook](/webhooks/incoming) function.
+
+## threads-disconnect
+
+Removes the user's Threads connection by deleting their `threads_profiles` row.
+
+**Endpoint:** `POST /functions/v1/threads-disconnect`
+
+**Auth:** User JWT
+
+### Behavior
+
+1. Deletes the user's row from `threads_profiles`
+2. The stored access token is removed from the database
+3. The user's Threads data no longer appears in the app
+
+<Callout kind="info">
+  Disconnecting does not revoke the token on Meta's side. The user can also revoke access from their Threads app settings.
+</Callout>
+
+## threads-webhook
+
+Receives real-time events from the Threads platform (mentions, publish confirmations).
+
+**Endpoint:** `POST /functions/v1/threads-webhook`
+
+**Auth:** Meta signature verification
+
+See [Incoming Webhooks](/webhooks/incoming) for full documentation on event types, payload format, and setup instructions.
+
+## admin-dashboard
+
+Returns aggregate platform statistics. Restricted to admin users (checked by email).
+
+**Endpoint:** `GET /functions/v1/admin-dashboard`
+
+**Auth:** Admin email check
+
+### Response
+
+Returns user counts, post counts, follower totals, and other platform-wide metrics. Uses the service role key to bypass RLS for aggregate queries.
+
+<Callout kind="alert">
+  This endpoint is restricted to specific admin email addresses hardcoded in the function. Non-admin users receive a 403 response.
+</Callout>

@@ -1,0 +1,140 @@
+---
+title: "Supabase Integration"
+description: "How Threadflow uses Supabase for authentication, database, edge functions, and cron jobs."
+---
+
+## Overview
+
+Supabase is the entire backend for Threadflow. It provides:
+
+- **Auth** for user registration and login
+- **PostgreSQL** for all data storage
+- **Edge Functions** for serverless API logic (15 functions)
+- **Cron jobs** for scheduled automation (2 jobs)
+- **Row Level Security** for data isolation
+
+**Project ID:** `xaoodbhmrkpcweedvoev`
+
+## Authentication
+
+Threadflow uses Supabase Auth with email/password. Users register with first name, last name, and email.
+
+The frontend uses the Supabase JS client for all auth operations:
+
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+)
+```
+
+Auth operations:
+- `supabase.auth.signUp()` for registration
+- `supabase.auth.signInWithPassword()` for login
+- `supabase.auth.signOut()` for logout
+- `supabase.auth.updateUser()` for email changes
+
+## Edge Functions
+
+All 15 edge functions are deployed with `--no-verify-jwt` because they either:
+- Handle authentication internally (checking the Authorization header)
+- Are public endpoints (OAuth callbacks, webhooks)
+
+| Function | Trigger | Auth |
+|----------|---------|------|
+| generate-threads | Frontend invocation | User JWT |
+| threads-auth-login | Frontend invocation | None (initiates OAuth) |
+| threads-auth-callback | Meta OAuth redirect | None (callback) |
+| threads-profile | Frontend invocation | User JWT |
+| threads-insights | Frontend invocation | User JWT |
+| threads-publish | Frontend invocation | User JWT |
+| threads-disconnect | Frontend invocation | User JWT |
+| threads-replies | Frontend invocation | User JWT |
+| threads-mentions | Frontend invocation | User JWT |
+| auto-publish | Cron (every 5 min) | Service role |
+| sync-followers | Cron (daily 6 AM UTC) | Service role |
+| webhook-create-post | External HTTP | Webhook secret header |
+| fetch-url-content | Frontend invocation | User JWT |
+| admin-dashboard | Frontend invocation | Admin email check |
+| threads-webhook | Threads platform | Webhook verification |
+
+See [Edge Functions Overview](/edge-functions/overview) for detailed documentation.
+
+## Cron jobs
+
+Two cron jobs run on Supabase's pg_cron extension:
+
+### auto-publish-scheduled-posts
+
+**Schedule:** Every 5 minutes
+
+Queries the `posts` table for posts where:
+- `status = 'scheduled'`
+- `scheduled_date` and `scheduled_time` are at or before the current time
+
+For each matching post, it calls the Threads API to publish, then updates the status to `published`.
+
+### sync-follower-counts
+
+**Schedule:** Daily at 6:00 AM UTC
+
+For each connected Threads account:
+1. Fetches the current follower count from the Threads API
+2. Inserts a row into `follower_history`
+
+This data powers the follower growth chart on the dashboard.
+
+## Row Level Security
+
+RLS is enabled on every table. Key policies:
+
+| Table | Select | Insert | Update | Delete |
+|-------|--------|--------|--------|--------|
+| posts | Own rows only | Own rows | Own rows | Own rows |
+| threads_profiles | Own row only | Own row | Own row | Own row |
+| content_categories | All (shared) | Own rows | Own rows | Own rows |
+| inspirations | Own rows only | Own rows | Own rows | Own rows |
+| follower_history | Own rows only | Service role | N/A | N/A |
+
+<Callout kind="alert">
+  The `admin-dashboard` function uses the Supabase service role key to bypass RLS for aggregate statistics. This key must never be exposed to the frontend.
+</Callout>
+
+## Database connection
+
+The frontend connects to Supabase using the anon key, which respects RLS:
+
+```typescript
+const supabase = createClient(
+  'https://xaoodbhmrkpcweedvoev.supabase.co',
+  'your_anon_key'
+)
+```
+
+Edge Functions use the service role key when they need to bypass RLS (cron jobs, admin stats):
+
+```typescript
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
+```
+
+## Deploying edge functions
+
+```bash
+# Deploy a single function
+supabase functions deploy generate-threads --no-verify-jwt
+
+# Deploy all functions
+supabase functions deploy --no-verify-jwt
+
+# View function logs
+supabase functions logs generate-threads
+```
+
+<Callout kind="tip">
+  After deploying, verify the function is live by checking the Supabase dashboard under Edge Functions. Look for the green "Active" status.
+</Callout>

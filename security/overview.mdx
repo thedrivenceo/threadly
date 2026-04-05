@@ -1,0 +1,108 @@
+---
+title: "Security Overview"
+description: "Secrets management, Row Level Security, admin access control, and OAuth token handling in Threadflow."
+---
+
+## Security model
+
+Threadflow's security is built on four layers:
+
+1. **Supabase Auth** for user identity
+2. **Row Level Security (RLS)** for data isolation
+3. **Supabase secrets** for API key storage
+4. **Webhook verification** for external requests
+
+## Secrets management
+
+All sensitive credentials are stored as Supabase secrets. They are never committed to code.
+
+| Secret | Purpose | Set via |
+|--------|---------|---------|
+| `ANTHROPIC_API_KEY` | Claude API access | `supabase secrets set` |
+| `THREADS_APP_ID` | Meta App ID | `supabase secrets set` |
+| `THREADS_APP_SECRET` | Meta App Secret | `supabase secrets set` |
+| `THREADS_REDIRECT_URI` | OAuth callback URL | `supabase secrets set` |
+| `WEBHOOK_SECRET` | Validates incoming webhook requests | `supabase secrets set` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS (auto-set by Supabase) | Supabase dashboard |
+
+<Callout kind="danger">
+  The `.env` file is included in `.gitignore`. If you see any API key, token, or secret in a code file, stop and remove it immediately.
+</Callout>
+
+## Row Level Security
+
+RLS is enabled on all tables. Every query from the frontend goes through the Supabase anon key, which enforces RLS policies.
+
+### How it works
+
+- Each table has policies that check `auth.uid()` against the row's `user_id` column
+- Users can only read, insert, update, and delete their own rows
+- Shared data (like `content_categories`) has a read-all policy but write is restricted
+- The `follower_history` table only allows inserts from the service role (cron jobs)
+
+### Service role bypass
+
+Two scenarios use the service role key to bypass RLS:
+
+1. **Cron jobs** (auto-publish, sync-followers) need to read all users' data
+2. **Admin dashboard** aggregates stats across all users
+
+The service role key is only accessible inside edge functions via `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')`. It is never sent to the frontend.
+
+## Admin access
+
+Admin access is restricted by email address. The `admin-dashboard` edge function checks the authenticated user's email against an allowlist before returning any data.
+
+There is no admin role in Supabase Auth. Admin status is determined purely by email match in the edge function logic.
+
+## OAuth token security
+
+Threads OAuth tokens are stored in the `threads_profiles` table:
+
+- Tokens are encrypted before storage
+- RLS ensures only the token owner can access their row
+- Long-lived tokens expire after 60 days
+- Reconnecting automatically refreshes the token
+- Disconnecting deletes the token from the database
+
+## Webhook security
+
+### Incoming: Threads webhook
+
+The `threads-webhook` function receives events from the Threads platform. Meta signs these requests, and the function verifies the signature before processing.
+
+### Incoming: webhook-create-post
+
+External tools push content via this endpoint. Requests must include a valid `x-webhook-secret` header that matches the `WEBHOOK_SECRET` Supabase secret.
+
+```bash
+# Example authenticated webhook request
+curl -X POST https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: your_webhook_secret" \
+  -d '{"title": "Post title", "content": "Post body"}'
+```
+
+## Edge function authentication
+
+All edge functions are deployed with `--no-verify-jwt`. This does not mean they are unauthenticated. Each function handles auth internally:
+
+| Auth method | Used by |
+|-------------|---------|
+| User JWT (Authorization header) | Most frontend-facing functions |
+| No auth (public endpoint) | threads-auth-login, threads-auth-callback |
+| Webhook secret header | webhook-create-post |
+| Meta signature verification | threads-webhook |
+| Service role (cron trigger) | auto-publish, sync-followers |
+| Admin email check | admin-dashboard |
+
+## Security checklist
+
+- [ ] `.env` is in `.gitignore`
+- [ ] No API keys in source code
+- [ ] RLS enabled on all tables
+- [ ] Service role key only used in edge functions
+- [ ] Webhook secret set and validated
+- [ ] OAuth tokens encrypted in database
+- [ ] Admin access restricted by email
+- [ ] API keys rotated on schedule (see [rotation schedule](/security/api-key-rotation))

@@ -1,0 +1,102 @@
+---
+title: "Edge Functions Overview"
+description: "Complete reference of all 15 Supabase Edge Functions powering Threadflow."
+---
+
+## Overview
+
+Threadflow runs 15 Supabase Edge Functions written in TypeScript (Deno). All functions are deployed with `--no-verify-jwt` and handle authentication internally.
+
+**Base URL:** `https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/`
+
+## All functions
+
+| # | Function | Category | Trigger | Purpose |
+|---|----------|----------|---------|---------|
+| 1 | generate-threads | Content | Frontend | AI content generation via Claude API |
+| 2 | fetch-url-content | Content | Frontend | Extracts text from URLs for repurposing |
+| 3 | threads-auth-login | Threads | Frontend | Initiates Threads OAuth flow |
+| 4 | threads-auth-callback | Threads | Meta redirect | Handles OAuth callback, stores tokens |
+| 5 | threads-profile | Threads | Frontend | Returns user's Threads profile data |
+| 6 | threads-publish | Threads | Frontend | Publishes posts to Threads |
+| 7 | threads-insights | Threads | Frontend | Fetches post engagement metrics |
+| 8 | threads-replies | Threads | Frontend | Fetches replies to user's posts |
+| 9 | threads-mentions | Threads | Frontend | Fetches mentions of user |
+| 10 | threads-disconnect | Threads | Frontend | Removes Threads connection |
+| 11 | threads-webhook | Threads | Threads platform | Receives real-time events from Threads |
+| 12 | auto-publish | Automation | Cron (5 min) | Publishes scheduled posts when due |
+| 13 | sync-followers | Automation | Cron (daily) | Records daily follower count |
+| 14 | webhook-create-post | External | HTTP POST | Pushes content from external tools |
+| 15 | admin-dashboard | Admin | Frontend | Returns platform-wide user and post stats |
+
+## Function categories
+
+<Columns cols="2">
+  <Card title="Content Generation" href="/edge-functions/content-generation" icon="pen-tool" horizontal="false">
+    generate-threads and fetch-url-content. AI-powered content creation and URL extraction.
+  </Card>
+
+  <Card title="Threads Integration" href="/edge-functions/threads-integration" icon="link" horizontal="false">
+    All threads-* functions. OAuth, publishing, insights, mentions, replies, and webhooks.
+  </Card>
+
+  <Card title="Automation" href="/edge-functions/automation" icon="clock" horizontal="false">
+    auto-publish and sync-followers. Cron-triggered background jobs.
+  </Card>
+
+  <Card title="Webhooks" href="/webhooks/outgoing" icon="webhook" horizontal="false">
+    webhook-create-post. External content ingestion API.
+  </Card>
+</Columns>
+
+## Authentication by function
+
+Functions use different auth methods depending on their trigger:
+
+| Auth method | Functions |
+|-------------|-----------|
+| User JWT (Authorization header) | generate-threads, threads-profile, threads-insights, threads-publish, threads-replies, threads-mentions, threads-disconnect, fetch-url-content |
+| No auth (public) | threads-auth-login, threads-auth-callback |
+| Cron (service role) | auto-publish, sync-followers |
+| Webhook secret header | webhook-create-post |
+| Meta signature | threads-webhook |
+| Admin email check | admin-dashboard |
+
+## Deployment
+
+Deploy a single function:
+
+```bash
+supabase functions deploy generate-threads --no-verify-jwt
+```
+
+Deploy all functions:
+
+```bash
+supabase functions deploy --no-verify-jwt
+```
+
+View logs for debugging:
+
+```bash
+supabase functions logs generate-threads --tail
+```
+
+<Callout kind="info">
+  The `--no-verify-jwt` flag is required because these functions handle their own auth. Without it, Supabase would reject requests that don't include a valid Supabase JWT, which would break OAuth callbacks, webhooks, and cron triggers.
+</Callout>
+
+## Environment variables
+
+All edge functions have access to these Supabase-managed environment variables:
+
+| Variable | Source |
+|----------|--------|
+| `SUPABASE_URL` | Auto-set by Supabase |
+| `SUPABASE_ANON_KEY` | Auto-set by Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-set by Supabase |
+| `ANTHROPIC_API_KEY` | Set via `supabase secrets set` |
+| `THREADS_APP_ID` | Set via `supabase secrets set` |
+| `THREADS_APP_SECRET` | Set via `supabase secrets set` |
+| `THREADS_REDIRECT_URI` | Set via `supabase secrets set` |
+| `WEBHOOK_SECRET` | Set via `supabase secrets set` |

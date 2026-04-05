@@ -1,0 +1,129 @@
+---
+title: "API Key Rotation"
+description: "Rotation schedules and procedures for all API keys, tokens, and secrets used by Threadflow."
+---
+
+## Rotation schedule
+
+| Secret | Rotation frequency | Trigger |
+|--------|--------------------|---------|
+| Anthropic API key | Every 90 days | Scheduled |
+| Supabase access token | After each deployment session | Manual |
+| Meta App Secret | Immediately if exposed | Incident-based |
+| Webhook secret | Immediately if compromised | Incident-based |
+| Threads OAuth tokens | Auto-expire after 60 days | Automatic on reconnect |
+
+## Rotation procedures
+
+### Anthropic API key
+
+<Steps>
+  <Step title="Generate a new key" icon="key" title-type="p">
+    Go to [console.anthropic.com](https://console.anthropic.com) and create a new API key.
+  </Step>
+
+  <Step title="Update the Supabase secret" icon="upload" title-type="p">
+    ```bash
+    supabase secrets set ANTHROPIC_API_KEY=new_key_here
+    ```
+  </Step>
+
+  <Step title="Verify the function works" icon="check" title-type="p">
+    Test content generation in the app to confirm the new key is active.
+  </Step>
+
+  <Step title="Revoke the old key" icon="trash" title-type="p">
+    Delete the old key from the Anthropic console.
+  </Step>
+</Steps>
+
+### Supabase access token
+
+Rotate this after each deployment session to limit exposure.
+
+<Steps>
+  <Step title="Generate a new token" icon="key" title-type="p">
+    Go to [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) and create a new access token.
+  </Step>
+
+  <Step title="Update your local CLI" icon="terminal" title-type="p">
+    ```bash
+    supabase login
+    ```
+    Paste the new token when prompted.
+  </Step>
+
+  <Step title="Revoke the old token" icon="trash" title-type="p">
+    Delete the previous token from the Supabase dashboard.
+  </Step>
+</Steps>
+
+### Meta App Secret
+
+Only rotate if the secret has been exposed. Rotating this will break the OAuth flow until the new secret is deployed.
+
+<Steps>
+  <Step title="Generate a new secret" icon="key" title-type="p">
+    Go to [developers.facebook.com](https://developers.facebook.com), open your app, and reset the App Secret.
+  </Step>
+
+  <Step title="Update the Supabase secret" icon="upload" title-type="p">
+    ```bash
+    supabase secrets set THREADS_APP_SECRET=new_secret_here
+    ```
+  </Step>
+
+  <Step title="Verify OAuth flow" icon="check" title-type="p">
+    Disconnect and reconnect a Threads account to confirm the new secret works.
+  </Step>
+</Steps>
+
+<Callout kind="alert">
+  Rotating the Meta App Secret will invalidate existing OAuth flows in progress. Coordinate timing to avoid disrupting users mid-connection.
+</Callout>
+
+### Webhook secret
+
+Rotate immediately if the secret is compromised. External tools sending webhooks will need the new value.
+
+<Steps>
+  <Step title="Generate a new secret" icon="key" title-type="p">
+    Create a strong random string:
+
+    ```bash
+    openssl rand -hex 32
+    ```
+  </Step>
+
+  <Step title="Update the Supabase secret" icon="upload" title-type="p">
+    ```bash
+    supabase secrets set WEBHOOK_SECRET=new_secret_here
+    ```
+  </Step>
+
+  <Step title="Update external tools" icon="settings" title-type="p">
+    Update the `x-webhook-secret` header value in any external tools (Make, Zapier, etc.) that send webhooks to Threadflow.
+  </Step>
+</Steps>
+
+### Threads OAuth tokens
+
+These rotate automatically. No manual action is needed.
+
+- Long-lived tokens last 60 days
+- When a user reconnects their Threads account, a fresh token is issued
+- The `threads-auth-callback` function handles the exchange automatically
+- If a token expires before reconnection, the user sees a "Reconnect" prompt
+
+## Monitoring for exposed secrets
+
+If you find a secret exposed in code, logs, or a public repository:
+
+1. **Rotate the exposed secret immediately** using the procedures above
+2. Check git history for the exposure and remove it
+3. Review access logs for unauthorized usage during the exposure window
+4. Update the `.env.example` file if needed (never the `.env` file itself)
+
+<Callout kind="danger">
+  If the Supabase service role key is exposed, contact Supabase support immediately. This key bypasses all RLS policies and grants full database access.
+</Callout>

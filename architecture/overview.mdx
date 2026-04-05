@@ -1,0 +1,142 @@
+---
+title: "Architecture Overview"
+description: "Tech stack, deployment topology, and data flow for the Threadflow platform."
+---
+
+## Tech stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Frontend | React + TypeScript + Vite | SPA with component-based UI |
+| Backend | Supabase | Auth, PostgreSQL database, Edge Functions, cron jobs |
+| AI | Claude API (claude-3-haiku-20240307) | Content generation and hashtag suggestions |
+| Social | Threads API | OAuth, publishing, insights, mentions, replies |
+| Hosting | Vercel | Frontend deployment at threadly-planner.vercel.app |
+| Supabase project | xaoodbhmrkpcweedvoev | All backend services |
+
+## System architecture
+
+```mermaid
+graph TD
+    subgraph Frontend
+        A[React + TypeScript + Vite]
+    end
+
+    subgraph Vercel
+        A
+    end
+
+    subgraph Supabase
+        B[Auth]
+        C[PostgreSQL Database]
+        D[Edge Functions x15]
+        E[Cron Jobs]
+    end
+
+    subgraph External APIs
+        F[Threads API]
+        G[Claude API]
+    end
+
+    A -->|Auth requests| B
+    A -->|Data queries with RLS| C
+    A -->|Function invocations| D
+    D -->|OAuth + Publish + Insights| F
+    D -->|Content generation| G
+    D -->|Read/Write| C
+    E -->|Trigger| D
+    F -->|Webhooks| D
+```
+
+## Data flow: content lifecycle
+
+This diagram shows how a piece of content moves from creation to publishing.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as React App
+    participant SF as Edge Functions
+    participant DB as PostgreSQL
+    participant Claude as Claude API
+    participant Threads as Threads API
+
+    User->>App: Create new post
+    App->>SF: generate-threads (AI content)
+    SF->>Claude: Prompt with content/voice
+    Claude-->>SF: Generated posts JSON
+    SF-->>App: Return generated content
+    App->>DB: Save post (status: draft)
+    User->>App: Schedule post
+    App->>DB: Update post (status: scheduled)
+    Note over DB,SF: Cron: auto-publish every 5 min
+    SF->>DB: Query scheduled posts (due now)
+    SF->>Threads: Publish post
+    Threads-->>SF: Post ID + permalink
+    SF->>DB: Update post (status: published)
+```
+
+## Data flow: Threads OAuth
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as React App
+    participant Login as threads-auth-login
+    participant Meta as Meta OAuth
+    participant Callback as threads-auth-callback
+    participant DB as PostgreSQL
+
+    User->>App: Click "Connect Threads"
+    App->>Login: Invoke threads-auth-login
+    Login-->>User: Redirect to Meta OAuth
+    User->>Meta: Authorize app
+    Meta->>Callback: Redirect with auth code
+    Callback->>Meta: Exchange code for token
+    Meta-->>Callback: Short-lived token
+    Callback->>Meta: Exchange for long-lived token
+    Meta-->>Callback: Long-lived token (60 days)
+    Callback->>DB: Store encrypted token in threads_profiles
+    Callback-->>User: Redirect to app (connected)
+```
+
+## Edge Function categories
+
+Threadflow has 15 Edge Functions organized into four groups:
+
+| Category | Functions | Description |
+|----------|-----------|-------------|
+| Content generation | generate-threads, fetch-url-content | AI content creation and URL extraction |
+| Threads integration | threads-auth-login, threads-auth-callback, threads-profile, threads-publish, threads-insights, threads-replies, threads-mentions, threads-disconnect, threads-webhook | Full Threads API integration |
+| Automation | auto-publish, sync-followers | Cron-triggered background jobs |
+| External | webhook-create-post, admin-dashboard | Incoming webhooks and admin stats |
+
+See [Edge Functions Overview](/edge-functions/overview) for complete documentation of each function.
+
+## Deployment
+
+The frontend deploys to Vercel automatically on push to main. Edge Functions deploy via the Supabase CLI.
+
+```bash
+# Deploy a single edge function
+supabase functions deploy generate-threads --no-verify-jwt
+
+# Deploy all edge functions
+supabase functions deploy --no-verify-jwt
+```
+
+<Callout kind="info">
+  All edge functions are deployed with `--no-verify-jwt` because they handle authentication internally or are public-facing endpoints (OAuth callbacks, webhooks).
+</Callout>
+
+## Next steps
+
+<Columns cols="2">
+  <Card title="Database schema" href="/architecture/database" icon="database" horizontal="false">
+    All tables, columns, and relationships documented.
+  </Card>
+
+  <Card title="Security overview" href="/security/overview" icon="shield" horizontal="false">
+    RLS policies, secrets management, and access control.
+  </Card>
+</Columns>

@@ -1,78 +1,78 @@
 ---
-title: Set Up Your Documentation
-description: 'A minimal, editable starting point for your own documentation site.'
+title: "Threadflow Documentation"
+description: "Technical documentation for Threadflow, a Threads content scheduler and publishing platform."
 ---
-## Start here (5–10 minutes)
 
-1. Edit this page so it describes your product and audience.
+## What is Threadflow?
 
-2. Customize your onboarding flow in the [Quickstart](/quickstart) page.
+Threadflow is a content scheduling and publishing platform for Meta's Threads. It combines AI-powered content generation, scheduled publishing, engagement analytics, and a content bank into a single tool.
 
-3. Delete or rewrite any sections and pages you do not plan to use.
-
-4. Invite a teammate to review the structure and concepts starting from [Core Concepts](/concepts).
-
-<Callout kind="alert" collapsed="false">
-  This site ships with placeholder content. Edit the text, links, and examples so they match your product before sharing it with others.
-</Callout>
-
-## What you get
+The app is live at [threadly-planner.vercel.app](https://threadly-planner.vercel.app).
 
 <Columns cols="3">
-  <Card title="Docs structure" href="/quickstart" icon="book-open" horizontal="false">
-    A clear navigation layout with starter pages you can rename or replace.
+  <Card title="Quickstart" href="/quickstart" icon="zap" horizontal="false">
+    Get set up with Threadflow in under 10 minutes.
   </Card>
 
-  <Card title="Components" href="#try-a-few-components" icon="layout-grid" horizontal="false" target="_self">
-    Prebuilt blocks like Callouts, Steps, Tabs, and Cards to keep pages clean.
+  <Card title="Architecture" href="/architecture/overview" icon="layers" horizontal="false">
+    Understand the tech stack, data flow, and how everything connects.
   </Card>
 
-  <Card title="API reference hook" href="/authentication" icon="code" horizontal="false">
-    A placeholder `openapi.yaml` you can swap with your real API spec.
+  <Card title="Edge Functions" href="/edge-functions/overview" icon="terminal" horizontal="false">
+    All 15 Supabase Edge Functions documented.
   </Card>
 </Columns>
 
-## Make your first edit
-
-<Steps>
-  <Step title="Rewrite this page" icon="edit" title-type="p">
-    Update the title, description, and sections in `introduction` so they reflect your product and documentation goals.
-  </Step>
-
-  <Step title="Customize Quickstart" icon="zap" title-type="p">
-    Replace the steps in `quickstart` with your real onboarding flow so new readers know exactly how to get started.
-  </Step>
-
-  <Step title="Remove or repurpose samples" icon="trash" title-type="p">
-    Delete unused sample sections and pages, or rewrite them with your own content to keep navigation focused.
-  </Step>
-</Steps>
-
-## Try a few components
-
-You can browse the component gallery in the [Components](/components) page for ready-to-use examples of Cards, Callouts, Steps, Tabs, and more.
-
-## Continue to the rest of the sample
+## Core capabilities
 
 <Columns cols="2">
-  <Card title="Quickstart" href="/quickstart" icon="zap" horizontal="false">
-    See the minimal setup flow.
-  </Card>
+  <div>
 
-  <Card title="Core Concepts" href="/concepts" icon="layers" horizontal="false">
-    Learn how pages, navigation, and components fit together.
-  </Card>
+  ### Content creation
+  - AI-powered content generation via Claude (Haiku model)
+  - Repurpose existing content into Threads-ready posts
+  - Voice-of-customer and style guide references
+  - Hashtag generation
 
-  <Card title="Components" href="/components" icon="code" horizontal="false">
-    A small gallery of built-in components.
-  </Card>
+  ### Scheduling and publishing
+  - Schedule posts for specific dates and times
+  - Auto-publish cron job runs every 5 minutes
+  - Direct publish to Threads via the Threads API
 
-  <Card title="Authentication" href="/authentication" icon="lock" horizontal="false">
-    Example layout for an auth guide.
-  </Card>
+  </div>
+  <div>
 
-  <Card title="Help Center" href="/help-center" icon="help-circle" horizontal="false">
-    Starter FAQ, guides, and troubleshooting templates.
-  </Card>
+  ### Analytics and insights
+  - Post engagement metrics from Threads API
+  - Follower count tracking (daily sync)
+  - Best posting time and day recommendations
+  - Post length analysis
+
+  ### Content management
+  - Content Bank for saving inspiration and drafts
+  - Category system with pillars and content types
+  - External webhook to push content from other tools
+  - URL content extraction for repurposing
+
+  </div>
 </Columns>
 
+## Tech stack at a glance
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React + TypeScript + Vite |
+| Backend | Supabase (Auth, Database, Edge Functions) |
+| AI | Claude API (Haiku model) |
+| Social API | Threads API (OAuth, publishing, insights) |
+| Hosting | Vercel |
+
+## How this documentation is organized
+
+| Section | What it covers |
+|---------|---------------|
+| [Architecture](/architecture/overview) | Tech stack, data flow diagrams, database schema |
+| [Integrations](/integrations/threads-api) | Threads API, Claude AI, and Supabase configuration |
+| [Edge Functions](/edge-functions/overview) | All 15 serverless functions with parameters and behavior |
+| [Webhooks](/webhooks/incoming) | Incoming Threads events and outgoing content creation API |
+| [Security](/security/overview) | Secrets management, RLS policies, admin access, key rotation |
