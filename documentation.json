@@ -68,8 +68,25 @@
             ]
           },
           {
-            "group": "Edge Functions",
-            "icon": "terminal",
+            "group": "Sample Endpoints",
+            "openapi": "openapi.yaml"
+          }
+        ],
+        "public": true
+      },
+      {
+        "tab": "Help Center",
+        "icon": "help-circle",
+        "pages": [
+          {
+            "title": "Help Center",
+            "path": "help-center",
+            "icon": "home"
+          },
+          {
+            "group": "FAQs",
+            "icon": "help-circle",
+            "expandable": false,
             "pages": [
               {
                 "title": "Overview",
@@ -125,7 +142,8 @@
               }
             ]
           }
-        ]
+        ],
+        "public": true
       },
       {
         "tab": "Changelog",
@@ -136,7 +154,8 @@
             "path": "changelog",
             "icon": "history"
           }
-        ]
+        ],
+        "public": true
       }
     ]
   }
