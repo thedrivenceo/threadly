@@ -1,8 +1,9 @@
 ---
-title: "Threadflow Documentation"
-description: "Technical documentation for Threadflow, a Threads content scheduler and publishing platform."
+title: Threadflow Documentation
+description: >-
+  Technical documentation for Threadflow, a Threads content scheduler and
+  publishing platform.
 ---
-
 ## What is Threadflow?
 
 Threadflow is a content scheduling and publishing platform for Meta's Threads. It combines AI-powered content generation, scheduled publishing, engagement analytics, and a content bank into a single tool.
@@ -25,54 +26,23 @@ The app is live at [threadly-planner.vercel.app](https://threadly-planner.vercel
 
 ## Core capabilities
 
-<Columns cols="2">
-  <div>
-
-  ### Content creation
-  - AI-powered content generation via Claude (Haiku model)
-  - Repurpose existing content into Threads-ready posts
-  - Voice-of-customer and style guide references
-  - Hashtag generation
-
-  ### Scheduling and publishing
-  - Schedule posts for specific dates and times
-  - Auto-publish cron job runs every 5 minutes
-  - Direct publish to Threads via the Threads API
-
-  </div>
-  <div>
-
-  ### Analytics and insights
-  - Post engagement metrics from Threads API
-  - Follower count tracking (daily sync)
-  - Best posting time and day recommendations
-  - Post length analysis
-
-  ### Content management
-  - Content Bank for saving inspiration and drafts
-  - Category system with pillars and content types
-  - External webhook to push content from other tools
-  - URL content extraction for repurposing
-
-  </div>
-</Columns>
-
 ## Tech stack at a glance
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React + TypeScript + Vite |
-| Backend | Supabase (Auth, Database, Edge Functions) |
-| AI | Claude API (Haiku model) |
+| Layer      | Technology                                |
+| ---------- | ----------------------------------------- |
+| Frontend   | React + TypeScript + Vite                 |
+| Backend    | Supabase (Auth, Database, Edge Functions) |
+| AI         | Claude API (Haiku model)                  |
 | Social API | Threads API (OAuth, publishing, insights) |
-| Hosting | Vercel |
+| Hosting    | Vercel                                    |
 
 ## How this documentation is organized
 
-| Section | What it covers |
-|---------|---------------|
-| [Architecture](/architecture/overview) | Tech stack, data flow diagrams, database schema |
-| [Integrations](/integrations/threads-api) | Threads API, Claude AI, and Supabase configuration |
-| [Edge Functions](/edge-functions/overview) | All 15 serverless functions with parameters and behavior |
-| [Webhooks](/webhooks/incoming) | Incoming Threads events and outgoing content creation API |
-| [Security](/security/overview) | Secrets management, RLS policies, admin access, key rotation |
+| Section                                    | What it covers                                               |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| [Architecture](/architecture/overview)     | Tech stack, data flow diagrams, database schema              |
+| [Integrations](/integrations/threads-api)  | Threads API, Claude AI, and Supabase configuration           |
+| [Edge Functions](/edge-functions/overview) | All 15 serverless functions with parameters and behavior     |
+| [Webhooks](/webhooks/incoming)             | Incoming Threads events and outgoing content creation API    |
+| [Security](/security/overview)             | Secrets management, RLS policies, admin access, key rotation |
+
