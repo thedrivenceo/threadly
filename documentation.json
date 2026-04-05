@@ -146,6 +146,22 @@
                 "icon": "refresh-cw"
               }
             ]
+          },
+          {
+            "group": "Billing",
+            "icon": "credit-card",
+            "pages": [
+              {
+                "title": "Plans and Pricing",
+                "path": "billing/plans",
+                "icon": "crown"
+              },
+              {
+                "title": "Feature Gating",
+                "path": "billing/feature-gating",
+                "icon": "lock"
+              }
+            ]
           }
         ],
         "public": true

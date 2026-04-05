@@ -1,0 +1,152 @@
+---
+title: "Plans and Pricing"
+description: "Feature breakdown and limits for Free, Pro, and Team tiers"
+---
+
+## Overview
+
+Threadflow offers three plans designed to grow with your content creation needs. Each plan unlocks additional features and higher limits.
+
+## Plan Comparison
+
+| Feature | Free | Pro ($19/mo) | Team ($49/mo) |
+|---------|------|-------------|---------------|
+| Scheduled posts | 20/month | Unlimited | Unlimited |
+| Threads accounts | 1 | 3 | 10 |
+| Team members | 0 | 1 | 5 |
+| Content Bank | Yes | Yes | Yes |
+| Calendar view | Yes | Yes | Yes |
+| Light and dark mode | Yes | Yes | Yes |
+| Analytics (stats) | Yes | Yes | Yes |
+| Analytics (charts) | No | Yes | Yes |
+| Best time heatmap | No | Yes | Yes |
+| Top posts breakdown | No | Yes | Yes |
+| Recommendations | No | Yes | Yes |
+| AI content generation | No | Yes | Yes |
+| Voice-to-text | No | Yes | Yes |
+| URL repurposing | No | Yes | Yes |
+| Content templates | No | Yes | Yes |
+| Hashtag suggestions | No | Yes | Yes |
+| Webhook access | No | Yes | Yes |
+| MCP server access | No | Yes | Yes |
+| Admin dashboard | No | No | Yes |
+| Priority support | No | No | Yes |
+
+## Yearly Pricing
+
+All plans offer a 20% discount when billed annually.
+
+| Plan | Monthly | Yearly (per month) | Yearly total |
+|------|---------|-------------------|-------------|
+| Free | $0 | $0 | $0 |
+| Pro | $19 | $15 | $180 |
+| Team | $49 | $39 | $468 |
+
+## Free Plan
+
+The free plan is designed to help you get started with Threadflow and evaluate whether it fits your workflow.
+
+**Includes:**
+- 20 scheduled posts per month (resets on the 1st)
+- 1 connected Threads account
+- Basic analytics showing total views, likes, replies, and reposts
+- Content Bank for saving and organizing drafts
+- Calendar view for scheduled content
+- Brand Voice setup (style guide and writing samples)
+- Content categories (pillars and types)
+- Inspiration board
+- Goals tracking
+
+**Does not include:**
+- AI content generation (repurpose, smart mix)
+- Voice-to-text
+- URL content importing
+- Content templates
+- Webhook or MCP server access
+- Charts, heatmap, top posts, or recommendations in analytics
+
+<Callout kind="info">
+  Free users see an upgrade prompt where locked features would normally appear. No features are hidden, just clearly gated.
+</Callout>
+
+## Pro Plan
+
+The Pro plan unlocks the full Threadflow experience for individual content creators.
+
+**Everything in Free, plus:**
+- Unlimited scheduled posts
+- Up to 3 connected Threads accounts
+- 1 team member seat
+- Full analytics with views chart, best time heatmap, top posts by engagement, and AI recommendations
+- AI content generation (individual posts, threads, smart mix)
+- Voice-to-text with real-time transcription
+- URL content importing and repurposing
+- Content templates (create, edit, and use)
+- AI hashtag suggestions
+- Post preview before publishing
+- Webhook access for external integrations (Make, Zapier)
+- MCP server access for AI tool integration (Claude Desktop, Cursor)
+
+## Team Plan
+
+The Team plan is built for agencies and teams managing multiple brands.
+
+**Everything in Pro, plus:**
+- Up to 10 connected Threads accounts
+- Up to 5 team member seats
+- Admin dashboard with user overview, post stats, and platform insights
+- Priority support
+- Custom categories per account
+- Bulk scheduling
+- Full API access
+
+## How Feature Gating Works
+
+### Schedule Limit (Free Plan)
+
+Free users can schedule up to 20 posts per month. The counter resets automatically on the first of each month.
+
+When the limit is reached:
+- A warning banner appears on the Create page
+- The Schedule and Post Now buttons are disabled
+- Existing scheduled posts are not affected
+- Users can still save drafts to the Content Bank
+
+### Upgrade Prompts
+
+When a free user encounters a locked feature, they see an upgrade prompt card with a direct link to the Billing page. Features are never hidden, they are clearly communicated as requiring an upgrade.
+
+### Monthly Counter Reset
+
+The scheduled posts counter tracks usage per calendar month. The system checks the `scheduled_posts_reset_at` timestamp and automatically resets the counter when a new month begins.
+
+## Backend Implementation
+
+Plan data is stored in the `user_plans` table:
+
+```sql
+create table user_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade unique,
+  plan text not null default 'free',
+  scheduled_posts_used integer not null default 0,
+  scheduled_posts_reset_at timestamptz default now(),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
+
+A database trigger automatically creates a free plan record when a new user signs up.
+
+<Callout kind="tip">
+  To manually upgrade a user's plan, update the `plan` field in the `user_plans` table to `pro` or `team`. This will be automated through Stripe once billing integration is complete.
+</Callout>
+
+## Stripe Integration (Coming Soon)
+
+The Billing page UI is ready for Stripe Checkout integration. When connected:
+
+- Upgrade/downgrade buttons will create Stripe Checkout sessions
+- Successful payments will update the `plan` field in `user_plans`
+- Stripe webhooks will handle subscription changes, cancellations, and renewals
+- Billing history will display real invoices from Stripe
