@@ -64,6 +64,11 @@
                 "title": "Supabase",
                 "path": "integrations/supabase",
                 "icon": "server"
+              },
+              {
+                "title": "MCP Server",
+                "path": "integrations/mcp-server",
+                "icon": "cpu"
               }
             ]
           },

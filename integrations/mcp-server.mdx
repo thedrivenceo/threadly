@@ -1,0 +1,205 @@
+---
+title: "MCP Server"
+description: "Connect Threadflow to Claude Desktop, Cursor, or any MCP-compatible AI tool"
+---
+
+## Overview
+
+The Threadflow MCP server lets you manage your content, drafts, scheduling, and analytics directly from any AI tool that supports the Model Context Protocol (MCP).
+
+Instead of opening the Threadflow app, you can ask your AI assistant to create posts, schedule content, check analytics, and repurpose articles, all through natural conversation.
+
+<Callout kind="info">
+  The MCP server is available on npm as `threadflow-mcp`.
+</Callout>
+
+## Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `create_draft` | Create a draft post in the Content Bank |
+| `create_thread` | Create a multi-post thread (threadstorm) |
+| `schedule_post` | Schedule a post for a specific date and time |
+| `list_drafts` | List all drafts in the Content Bank |
+| `list_scheduled` | List all scheduled posts |
+| `list_categories` | View content pillars and content types |
+| `repurpose_content` | AI-generate posts from text or a URL |
+| `get_analytics` | Get your performance summary |
+| `get_follower_history` | View follower count trend over time |
+| `delete_draft` | Delete a draft thread |
+
+## Setup
+
+<Steps>
+  <Step title="Install the package" icon="download" title-type="p">
+    Install the MCP server globally via npm.
+
+    ```bash
+    npm install -g threadflow-mcp
+    ```
+  </Step>
+
+  <Step title="Get your credentials" icon="key" title-type="p">
+    You need two values from your Threadflow setup:
+
+    - **Supabase anon key:** Go to your Supabase project dashboard > Settings > API > copy the `anon` public key
+    - **Webhook secret:** Go to Threadflow > Settings > Webhook > reveal and copy the secret
+
+  </Step>
+
+  <Step title="Configure your AI tool" icon="settings" title-type="p">
+    Add the MCP server to your AI tool's configuration.
+
+    <Tabs>
+      <Tab title="Claude Desktop" icon="message-square">
+        Add this to your `claude_desktop_config.json`:
+
+        ```json title="claude_desktop_config.json"
+        {
+          "mcpServers": {
+            "threadflow": {
+              "command": "threadflow-mcp",
+              "env": {
+                "THREADFLOW_API_KEY": "your-supabase-anon-key",
+                "THREADFLOW_WEBHOOK_SECRET": "your-webhook-secret"
+              }
+            }
+          }
+        }
+        ```
+
+        Config file locations:
+        - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+        - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+      </Tab>
+
+      <Tab title="Claude Code" icon="terminal">
+        Add to your project's `.claude/settings.json` or global settings:
+
+        ```json title=".claude/settings.json"
+        {
+          "mcpServers": {
+            "threadflow": {
+              "command": "threadflow-mcp",
+              "env": {
+                "THREADFLOW_API_KEY": "your-supabase-anon-key",
+                "THREADFLOW_WEBHOOK_SECRET": "your-webhook-secret"
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+
+      <Tab title="npx (no install)" icon="zap">
+        If you prefer not to install globally, use npx:
+
+        ```json
+        {
+          "mcpServers": {
+            "threadflow": {
+              "command": "npx",
+              "args": ["-y", "threadflow-mcp"],
+              "env": {
+                "THREADFLOW_API_KEY": "your-supabase-anon-key",
+                "THREADFLOW_WEBHOOK_SECRET": "your-webhook-secret"
+              }
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Start using it" icon="play" title-type="p">
+    Restart your AI tool and start asking it to manage your Threadflow content.
+
+    <Callout kind="success">
+      Try asking: "Show me my drafts in Threadflow"
+    </Callout>
+  </Step>
+</Steps>
+
+## Environment Variables
+
+<ParamField header="THREADFLOW_API_KEY" param-type="string" required="true" deprecated="false">
+  Your Supabase anon key. Used for reading data (drafts, scheduled posts, categories, analytics, follower history).
+</ParamField>
+
+<ParamField header="THREADFLOW_WEBHOOK_SECRET" param-type="string" required="false" deprecated="false">
+  Your webhook secret from Threadflow Settings. Required for write operations (creating drafts, scheduling posts, deleting).
+</ParamField>
+
+<ParamField header="THREADFLOW_SUPABASE_URL" param-type="string" required="false" deprecated="false">
+  Custom Supabase URL. Defaults to the Threadflow hosted instance. Only change this if you self-host.
+</ParamField>
+
+## Usage Examples
+
+### Create a draft post
+
+> "Create a draft post about how consistency beats intensity when building an audience"
+
+The AI will call `create_draft` and save the post to your Content Bank.
+
+### Schedule a thread
+
+> "Schedule a 3-part thread about morning routines for next Monday at 9am"
+
+The AI will call `create_thread` with the posts and `schedule_post` with the date and time.
+
+### Repurpose content from a URL
+
+> "Repurpose this Substack article into Threads posts: https://example.com/my-article"
+
+The AI will call `repurpose_content`, which fetches the URL content and uses Claude AI to generate post ideas. You can then save the ones you like using `create_draft` or `create_thread`.
+
+### Check analytics
+
+> "How are my Threads stats looking?"
+
+The AI will call `get_analytics` and `get_follower_history` to give you a summary of your drafts, scheduled posts, published content, and follower growth.
+
+### List and manage drafts
+
+> "Show me my drafts and delete the one about productivity"
+
+The AI will call `list_drafts` to show your Content Bank, then `delete_draft` to remove the one you specify.
+
+## Troubleshooting
+
+<ExpandableGroup>
+  <Expandable title="MCP server not connecting" default-open="false">
+    - Verify the package is installed: `npm list -g threadflow-mcp`
+    - Check your config file path is correct for your OS
+    - Restart your AI tool after updating the config
+    - Ensure the `command` value matches: `threadflow-mcp` (global install) or use npx
+  </Expandable>
+
+  <Expandable title="Authentication errors" default-open="false">
+    - Verify your `THREADFLOW_API_KEY` is the Supabase **anon** key (starts with `eyJ...`)
+    - Check the key hasn't expired or been regenerated
+    - For write operations, ensure `THREADFLOW_WEBHOOK_SECRET` is set correctly
+  </Expandable>
+
+  <Expandable title="No data returned" default-open="false">
+    - Confirm you have posts in your Threadflow account
+    - Check that your Supabase project is running
+    - Verify the API key belongs to the correct Supabase project
+  </Expandable>
+</ExpandableGroup>
+
+## Source Code
+
+The MCP server is open source:
+
+<Columns cols="2">
+  <Card title="GitHub Repository" href="https://github.com/thedrivenceo/thready-mcp" icon="github" horizontal="false">
+    View source code, report issues, and contribute.
+  </Card>
+
+  <Card title="npm Package" href="https://www.npmjs.com/package/threadflow-mcp" icon="package" horizontal="false">
+    Install from the npm registry.
+  </Card>
+</Columns>
