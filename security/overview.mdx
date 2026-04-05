@@ -5,14 +5,49 @@ description: "Per-user webhook secrets, rate limiting, Row Level Security, admin
 
 ## Security model
 
-MuseCraft's security is built on six layers:
+MuseCraft's security is built on seven layers:
 
-1. **Supabase Auth** for user identity and JWT verification
-2. **Row Level Security (RLS)** for data isolation between users
-3. **Per-user webhook secrets** for secure external integrations
-4. **AI rate limiting** to prevent abuse and cost overruns
-5. **Admin access controls** via environment variables
-6. **CORS restrictions** for origin validation
+1. **Authentication and password policy** with email verification, strong passwords, and leaked password detection
+2. **Supabase Auth** for user identity and JWT verification
+3. **Row Level Security (RLS)** for data isolation between users
+4. **Per-user webhook secrets** for secure external integrations
+5. **AI rate limiting** to prevent abuse and cost overruns
+6. **Admin access controls** via environment variables
+7. **CORS restrictions** for origin validation
+
+## Authentication and password policy
+
+MuseCraft uses Supabase Auth for all user authentication. The following security policies are enforced at the platform level.
+
+### Email verification
+
+All new users must confirm their email address before they can access the app. A confirmation link is sent on signup. Users cannot log in until they verify.
+
+### Password requirements
+
+Passwords must meet all of the following criteria:
+
+- Minimum 8 characters
+- At least one lowercase letter
+- At least one uppercase letter
+- At least one digit
+- Checked against known leaked password databases (compromised passwords are rejected)
+
+### Password changes
+
+- Changing your password requires entering your current password first
+- Password changes trigger a secure re-authentication flow
+- Password reset emails use a 6-digit OTP code
+
+### Session security
+
+- Sessions are managed by Supabase Auth with JWT tokens
+- Tokens expire according to Supabase default settings
+- Each device maintains its own session
+
+<Callout kind="info">
+  These policies are enforced by Supabase Auth at the infrastructure level. They cannot be bypassed by the frontend or API.
+</Callout>
 
 ## Secrets management
 
