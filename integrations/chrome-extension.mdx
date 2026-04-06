@@ -1,0 +1,103 @@
+---
+title: "Chrome Extension"
+description: "Save inspiration from anywhere on the web directly to your PublishMuse Inspiration board with one click."
+---
+
+## Overview
+
+The PublishMuse Chrome Extension lets you save content to your Inspiration board without leaving the page you're browsing. It works in two ways:
+
+- **On any website**: Click the extension icon to save the current page URL with an optional pillar and content type
+- **On threads.net**: A bookmark icon appears on each post for instant one-click saving
+
+## Installation
+
+<Steps>
+  <Step title="Download the extension" icon="download" title-type="p">
+    Download the extension folder from your PublishMuse account or the Chrome Web Store.
+  </Step>
+
+  <Step title="Load in Chrome" icon="chrome" title-type="p">
+    Open `chrome://extensions` in Chrome, enable **Developer mode** (top right toggle), and click **Load unpacked**. Select the extension folder.
+  </Step>
+
+  <Step title="Connect your account" icon="link" title-type="p">
+    Click the PublishMuse icon in your Chrome toolbar. You need two pieces of information from your Settings page:
+
+    1. **Webhook URL**: Copy from Settings > Webhook
+    2. **Webhook Secret**: Copy from Settings > Webhook (click the eye icon to reveal it)
+
+    Paste both into the extension and click **Connect**. The extension will test the connection and confirm it worked.
+  </Step>
+</Steps>
+
+<Callout kind="info">
+  The extension validates your credentials before saving them. If you see an error, double check that you copied the full webhook URL and secret without any extra spaces.
+</Callout>
+
+## Saving from any page
+
+1. Navigate to any page you want to save as inspiration
+2. Click the PublishMuse icon in your toolbar
+3. The current page URL is auto-filled
+4. Optionally select a **Pillar** and **Content Type** from the dropdowns
+5. Click **Save to Inspiration**
+
+Your categories (pillars and content types) are fetched fresh from your account every time you open the popup, so any changes you make in the app are immediately reflected.
+
+## Saving from Threads
+
+When you browse `threads.net`, the extension automatically adds a bookmark icon to each post in your feed.
+
+- Click the bookmark icon to instantly save the post URL to your Inspiration board
+- The icon fills in to confirm the save was successful
+- The post text is captured alongside the URL
+
+<Callout kind="tip">
+  This is the fastest way to build your inspiration library. Scroll through Threads and bookmark anything that catches your eye, then repurpose it later using the AI tools in PublishMuse.
+</Callout>
+
+## Changing your connection
+
+Click **Settings** in the bottom right of the extension popup to update your webhook URL or secret. This is useful if you regenerate your webhook secret or switch accounts.
+
+## How it works
+
+The extension communicates with PublishMuse through the `save-inspiration` edge function. Every request is authenticated using your unique webhook secret, so only you can save to your Inspiration board.
+
+The flow:
+1. Extension sends the URL, pillar, and content type to the edge function
+2. Edge function validates your webhook secret
+3. Content is saved to the `inspirations` table in your account
+4. The entry appears on your Inspiration page in PublishMuse
+
+## Troubleshooting
+
+<ExpandableGroup>
+  <Expandable title="Extension shows 'Invalid webhook secret'" default-open="false">
+    - Go to Settings in PublishMuse and reveal your webhook secret
+    - Click the copy button to copy it exactly
+    - In the extension, click Settings, clear the secret field, and paste fresh
+    - Make sure there are no extra spaces before or after the secret
+  </Expandable>
+
+  <Expandable title="Extension shows 'Could not reach the server'" default-open="false">
+    - Check your internet connection
+    - Verify the Webhook URL is correct (copy it fresh from Settings)
+    - The URL should look like `https://xxxxx.supabase.co/functions/v1/webhook-create-post`
+    - The extension automatically extracts the base URL, so pasting the full webhook URL is fine
+  </Expandable>
+
+  <Expandable title="Bookmark button doesn't appear on Threads" default-open="false">
+    - Make sure you're on `threads.net` (not a different domain)
+    - Try refreshing the page
+    - Check that the extension is enabled in `chrome://extensions`
+    - The button appears on posts as they load, including during infinite scroll
+  </Expandable>
+
+  <Expandable title="Categories not showing in dropdowns" default-open="false">
+    - Categories are fetched from your account when the popup opens
+    - Make sure you have pillars and content types set up on your Categories page
+    - Try clicking Settings and reconnecting
+  </Expandable>
+</ExpandableGroup>
