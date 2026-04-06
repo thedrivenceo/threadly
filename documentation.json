@@ -1,11 +1,11 @@
 {
-  "name": "Threadflow",
+  "name": "PublishMuse",
   "colors": {
     "light": {
-      "brand": "#6366F1"
+      "brand": "#000000"
     },
     "dark": {
-      "brand": "#818CF8"
+      "brand": "#ffffff"
     }
   },
   "navigation": {
@@ -75,6 +75,11 @@
                 "title": "Supabase",
                 "path": "integrations/supabase",
                 "icon": "server"
+              },
+              {
+                "title": "Chrome Extension",
+                "path": "integrations/chrome-extension",
+                "icon": "bookmark"
               },
               {
                 "title": "MCP Server",
