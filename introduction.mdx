@@ -1,48 +1,57 @@
 ---
-title: Threadflow Documentation
+title: PublishMuse Documentation
 description: >-
-  Technical documentation for Threadflow, a Threads content scheduler and
-  publishing platform.
+  Technical documentation for PublishMuse, a Threads content scheduler and
+  publishing platform with AI-powered content repurposing.
 ---
-## What is Threadflow?
+## What is PublishMuse?
 
-Threadflow is a content scheduling and publishing platform for Meta's Threads. It combines AI-powered content generation, scheduled publishing, engagement analytics, and a content bank into a single tool.
-
-The app is live at [threadly-planner.vercel.app](https://threadly-planner.vercel.app).
+PublishMuse is a content scheduling and publishing platform for Meta's Threads. It combines AI-powered content repurposing, smart scheduling, engagement analytics, brand voice customization, and a Chrome extension into a single tool for content creators.
 
 <Columns cols="3">
   <Card title="Quickstart" href="/quickstart" icon="zap" horizontal="false">
-    Get set up with Threadflow in under 10 minutes.
+    Get set up with PublishMuse in under 10 minutes.
   </Card>
 
   <Card title="Architecture" href="/architecture/overview" icon="layers" horizontal="false">
     Understand the tech stack, data flow, and how everything connects.
   </Card>
 
-  <Card title="Edge Functions" href="/edge-functions/overview" icon="terminal" horizontal="false">
-    All 15 Supabase Edge Functions documented.
+  <Card title="Chrome Extension" href="/integrations/chrome-extension" icon="bookmark" horizontal="false">
+    Save inspiration from anywhere with one click.
   </Card>
 </Columns>
 
 ## Core capabilities
 
-## Tech stack at a glance
+- **Content Bank**: Store drafts, categorize by pillar and content type, schedule or post directly
+- **AI Repurposing**: Turn articles, voice notes, and documents into short, mid, and long form posts using your brand voice
+- **Smart Scheduling**: Set your posting frequency, and PublishMuse finds the best times from your engagement data
+- **Multi-Account**: Connect multiple Threads accounts (up to 10 on Team plan)
+- **Brand Voice**: Upload a brand doc or answer style guide questions so AI writes like you
+- **Chrome Extension**: Save posts from Threads and any website to your Inspiration board
+- **Analytics**: Real Threads data with views, engagement, best time heatmap, and recommendations
+- **Team Management**: Invite team members with Owner, Manager, and Member roles
 
-| Layer      | Technology                                |
-| ---------- | ----------------------------------------- |
-| Frontend   | React + TypeScript + Vite                 |
-| Backend    | Supabase (Auth, Database, Edge Functions) |
-| AI         | Claude API (Haiku model)                  |
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React + TypeScript + Vite + Tailwind CSS |
+| UI | shadcn/ui + Framer Motion |
+| Backend | Supabase (Auth, Database, Edge Functions) |
+| AI | Claude API (Haiku model) |
 | Social API | Threads API (OAuth, publishing, insights) |
-| Hosting    | Vercel                                    |
+| Hosting | Vercel |
+| Font | Figtree |
 
 ## How this documentation is organized
 
-| Section                                    | What it covers                                               |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| [Architecture](/architecture/overview)     | Tech stack, data flow diagrams, database schema              |
-| [Integrations](/integrations/threads-api)  | Threads API, Claude AI, and Supabase configuration           |
-| [Edge Functions](/edge-functions/overview) | All 15 serverless functions with parameters and behavior     |
-| [Webhooks](/webhooks/incoming)             | Incoming Threads events and outgoing content creation API    |
-| [Security](/security/overview)             | Secrets management, RLS policies, admin access, key rotation |
-
+| Section | What it covers |
+|---------|---------------|
+| [Architecture](/architecture/overview) | Tech stack, data flow, database schema |
+| [Integrations](/integrations/threads-api) | Threads API, Claude AI, Supabase, Chrome Extension, MCP Server |
+| [Edge Functions](/edge-functions/overview) | All 19 serverless functions with parameters and behavior |
+| [Webhooks](/webhooks/incoming) | Incoming Threads events and outgoing content creation API |
+| [Security](/security/overview) | Per-user secrets, rate limiting, RLS, admin controls, password policy |
+| [Billing](/billing/plans) | Plans, pricing, and feature gating |
