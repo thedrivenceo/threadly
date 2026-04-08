@@ -3,6 +3,18 @@ title: Changelog
 description: Release notes and updates for PublishMuse.
 ---
 
+<Update label="2026-04-07" description="v2.0.2" tags={["Feature"]}>
+  ### Pending Approval Workflow
+
+  Posts sent via webhook with a date now arrive as **pending** (amber) instead of immediately scheduled. This gives you a chance to review and edit before committing.
+
+  - Pending posts appear in amber on the calendar and in the Content Bank
+  - Click **Approve** to schedule, or edit first then approve
+  - Auto-publish only processes approved (scheduled) posts
+  - Webhook still accepts `"status": "scheduled"` to skip approval if needed
+  - Webhook auto-fills best posting time when date is provided without a time
+</Update>
+
 <Update label="2026-04-07" description="v2.0.1" tags={["Improvement"]}>
   ### Content Bank and Scheduling Improvements
 
