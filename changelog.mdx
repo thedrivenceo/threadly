@@ -1,0 +1,90 @@
+---
+title: Changelog
+description: Release notes and updates for PublishMuse.
+---
+
+<Update label="2026-04-07" description="v2.0.0" tags={["Major Release"]}>
+  ### PublishMuse Launch
+
+  Complete redesign and feature overhaul. Formerly Threadflow, now PublishMuse.
+
+  **Visual Overhaul**
+  - Threads-inspired black and white theme with colored accent icons
+  - Figtree font across the entire app
+  - True black dark mode (#000), pure white light mode (#fff)
+  - Solid borders, shadow card system, hover lift effects
+  - Green activity heatmap, solid calendar post colors
+  - Theme toggle in top right corner
+
+  **Multi-Account Threads Support**
+  - Connect multiple Threads accounts (Free: 1, Pro: 3, Team: 10)
+  - Switch between accounts on the Accounts page
+  - All edge functions use the active account
+
+  **AI Content System**
+  - Custom AI prompts page for repurposing and audio processing
+  - Dynamic prompts built from brand voice, writing samples, templates, and categories
+  - Brand voice document upload as alternative to questionnaire
+  - Three output formats: short (1-2 sentences), mid (1 paragraph), long (multi-thread)
+  - AI rate limiting: 10/day free, 100/day pro and team
+
+  **Smart Scheduling**
+  - Posting frequency setting (1-5x per day) on Goals page
+  - Calendar and list view show placeholder slots at best times from engagement data
+  - "Best slot" button auto-schedules to the next available slot
+  - "Schedule" button on cards opens date picker with auto best time
+  - Best slot available on Create, Content Bank, and Inspiration pages
+
+  **Content Bank Improvements**
+  - Pillar and content type selectors on each card
+  - Dual filter dropdowns (pillars and content types)
+  - Inline Best Slot, Schedule, and Delete buttons on every card
+  - Solid borders replacing dashed borders
+
+  **Categories Page**
+  - Two-column layout: Content Types and Content Pillars side by side
+  - Inline edit for name and color on each item
+
+  **Goals Page Redesign**
+  - Follower goal with celebration (confetti + toast when reached)
+  - Daily replies as dropdown selector
+  - Posting frequency setting with green icon
+  - All cards with colored icon containers
+
+  **Chrome Extension**
+  - Save inspiration from any page via popup
+  - One-click bookmark button on Threads posts
+  - Pillar and content type selection in popup
+  - Connection test on setup with clear error messages
+  - Categories fetched fresh from server on every open
+
+  **Navigation Reorganization**
+  - AI Prompts and Accounts as standalone pages
+  - Settings menu (UserMenu popover): My Profile, Team, Billing, AI Prompts, Accounts, Admin
+  - Sidebar: core content pages only (Dashboard through Goals)
+  - 404 redirects to dashboard (logged in) or sign in (logged out)
+
+  **Security Hardening**
+  - Per-user webhook secrets (unique per account, not shared)
+  - AI generation rate limiting (10/day free, 100/day pro)
+  - Admin emails controlled via environment variable
+  - CORS restriction support via ALLOWED_ORIGINS secret
+  - Email verification required
+  - Strong password policy: uppercase, lowercase, digits, leaked password check
+
+  **Data Migration**
+  - All user data moved from localStorage to Supabase
+  - Style guide, brand doc, goals, templates, writing samples all persist across devices
+  - Only theme preference and dismissed replies remain local
+
+  **Infrastructure**
+  - Vercel SPA routing (no more 404 on page refresh)
+  - 19 edge functions (added: threads-switch-account, save-inspiration)
+  - New tables: user_settings, user_templates, user_writing_samples, user_prompts
+  - PWA manifest and service worker updated
+
+  **Billing Page**
+  - Larger feature text (14px)
+  - Fixed "Most Popular" badge contrast in dark mode
+  - Webhook examples clarified (draft vs scheduled, with category/type)
+</Update>
