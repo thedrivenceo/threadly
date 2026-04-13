@@ -1,11 +1,11 @@
 ---
 title: "Chrome Extension"
-description: "Save inspiration from anywhere on the web directly to your PublishMuse Inspiration board with one click."
+description: "Save inspiration from anywhere on the web directly to your Post Companion Inspiration board with one click."
 ---
 
 ## Overview
 
-The PublishMuse Chrome Extension lets you save content to your Inspiration board without leaving the page you're browsing. It works in two ways:
+The Post Companion Chrome Extension lets you save content to your Inspiration board without leaving the page you're browsing. It works in two ways:
 
 - **On any website**: Click the extension icon to save the current page URL with an optional pillar and content type
 - **On threads.net**: A bookmark icon appears on each post for instant one-click saving
@@ -14,7 +14,7 @@ The PublishMuse Chrome Extension lets you save content to your Inspiration board
 
 <Steps>
   <Step title="Download the extension" icon="download" title-type="p">
-    Download the extension folder from your PublishMuse account or the Chrome Web Store.
+    Download the extension folder from your Post Companion account or the Chrome Web Store.
   </Step>
 
   <Step title="Load in Chrome" icon="chrome" title-type="p">
@@ -22,7 +22,7 @@ The PublishMuse Chrome Extension lets you save content to your Inspiration board
   </Step>
 
   <Step title="Connect your account" icon="link" title-type="p">
-    Click the PublishMuse icon in your Chrome toolbar. You need two pieces of information from your Settings page:
+    Click the Post Companion icon in your Chrome toolbar. You need two pieces of information from your Settings page:
 
     1. **Webhook URL**: Copy from Settings > Webhook
     2. **Webhook Secret**: Copy from Settings > Webhook (click the eye icon to reveal it)
@@ -38,7 +38,7 @@ The PublishMuse Chrome Extension lets you save content to your Inspiration board
 ## Saving from any page
 
 1. Navigate to any page you want to save as inspiration
-2. Click the PublishMuse icon in your toolbar
+2. Click the Post Companion icon in your toolbar
 3. The current page URL is auto-filled
 4. Optionally select a **Pillar** and **Content Type** from the dropdowns
 5. Click **Save to Inspiration**
@@ -54,7 +54,7 @@ When you browse `threads.net`, the extension automatically adds a bookmark icon 
 - The post text is captured alongside the URL
 
 <Callout kind="tip">
-  This is the fastest way to build your inspiration library. Scroll through Threads and bookmark anything that catches your eye, then repurpose it later using the AI tools in PublishMuse.
+  This is the fastest way to build your inspiration library. Scroll through Threads and bookmark anything that catches your eye, then repurpose it later using the AI tools in Post Companion.
 </Callout>
 
 ## Changing your connection
@@ -63,19 +63,19 @@ Click **Settings** in the bottom right of the extension popup to update your web
 
 ## How it works
 
-The extension communicates with PublishMuse through the `save-inspiration` edge function. Every request is authenticated using your unique webhook secret, so only you can save to your Inspiration board.
+The extension communicates with Post Companion through the `save-inspiration` edge function. Every request is authenticated using your unique webhook secret, so only you can save to your Inspiration board.
 
 The flow:
 1. Extension sends the URL, pillar, and content type to the edge function
 2. Edge function validates your webhook secret
 3. Content is saved to the `inspirations` table in your account
-4. The entry appears on your Inspiration page in PublishMuse
+4. The entry appears on your Inspiration page in Post Companion
 
 ## Troubleshooting
 
 <ExpandableGroup>
   <Expandable title="Extension shows 'Invalid webhook secret'" default-open="false">
-    - Go to Settings in PublishMuse and reveal your webhook secret
+    - Go to Settings in Post Companion and reveal your webhook secret
     - Click the copy button to copy it exactly
     - In the extension, click Settings, clear the secret field, and paste fresh
     - Make sure there are no extra spaces before or after the secret
