@@ -3,10 +3,16 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
-<Update label="2026-04-13" description="v2.0.7" tags={["Improvement"]}>
+<Update label="2026-04-13" description="v2.0.7" tags={["Improvement", "Fix"]}>
   ### App Renamed to Post Companion
 
   The app has been renamed from PublishMuse to Post Companion. All documentation, UI references, and branding updated to reflect the new name.
+
+  ### Engagement Reply Fix
+
+  - Fixed a bug where clicking "Reply" on the Engagement page created a new standalone post instead of replying in the thread
+  - The `reply_to_id` was incorrectly using the commenter's reply ID (which the user doesn't own) instead of the user's original post ID
+  - Replies now correctly post as thread replies and auto-prepend @username to direct the response
 </Update>
 
 
