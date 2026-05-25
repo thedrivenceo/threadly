@@ -1,11 +1,11 @@
 ---
 title: "Threads API Integration"
-description: "How Threadflow connects to Meta's Threads API for OAuth, publishing, insights, mentions, and replies."
+description: "How Post Companion connects to Meta's Threads API for OAuth, publishing, insights, mentions, and replies."
 ---
 
 ## Overview
 
-Threadflow integrates with the Threads API for five core capabilities:
+Post Companion integrates with the Threads API for five core capabilities:
 
 1. **OAuth authentication** to connect user accounts
 2. **Publishing** posts and threads directly to Threads
@@ -17,23 +17,24 @@ All Threads API communication happens through Supabase Edge Functions. The front
 
 ## OAuth flow
 
-Threadflow uses Meta's OAuth 2.0 flow to connect Threads accounts. Two edge functions handle this:
+Post Companion uses Meta's OAuth 2.0 flow to connect Threads accounts. The flow opens in a **popup window** so users never leave the current page. Two edge functions handle it:
 
-- `threads-auth-login` initiates the flow
-- `threads-auth-callback` completes it
+- `threads-auth-login` initiates the flow and returns the Meta OAuth URL
+- `threads-auth-callback` completes it, exchanges the code for a long-lived token, and stores the profile
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant App as Threadflow
+    participant App as Post Companion
     participant Login as threads-auth-login
     participant Meta as Meta OAuth Server
     participant Callback as threads-auth-callback
     participant DB as Database
 
     User->>App: Click "Connect Threads"
-    App->>Login: GET /functions/v1/threads-auth-login
-    Login-->>User: 302 Redirect to Meta
+    App->>Login: POST /functions/v1/threads-auth-login
+    Login-->>App: { url: "https://threads.net/oauth/..." }
+    App->>User: Opens popup window to Meta
     User->>Meta: Grant permissions
     Meta->>Callback: Redirect with ?code=xxx
     Callback->>Meta: POST /oauth/access_token (short-lived)
@@ -41,7 +42,8 @@ sequenceDiagram
     Callback->>Meta: GET /access_token?grant_type=th_exchange_token
     Meta-->>Callback: Long-lived token (60 days)
     Callback->>DB: Upsert threads_profiles row
-    Callback-->>User: Redirect to app
+    Callback-->>User: Redirect to app origin (closes popup)
+    App->>App: Detects popup return, refreshes profile
 ```
 
 ### Required scopes
@@ -64,6 +66,20 @@ The OAuth request includes these Threads API scopes:
 <Callout kind="alert">
   Long-lived tokens expire after 60 days. When a user reconnects their Threads account, the callback function automatically exchanges for a fresh long-lived token.
 </Callout>
+
+## Multi-account support
+
+Users can connect more than one Threads account (Free: 1, Pro: 3, Team: 10). Each connected account has a row in the `threads_profiles` table with an `is_active` flag.
+
+### Switching accounts
+
+The `threads-switch-account` edge function sets `is_active = true` for the chosen account and `is_active = false` for all others (for that user). Switching is immediate — the sidebar dropdown updates all open pages without a page reload.
+
+All posts are tagged with a `threads_user_id` column so each account's content is kept separate. The active account's ID is used as a filter on every query for posts, categories, and analytics.
+
+### Account switcher
+
+The sidebar profile area shows a chevron when more than one account is connected. Clicking it opens a dropdown of all accounts with a checkmark on the active one. Selecting an account calls `threads-switch-account` and refreshes all page data live.
 
 ## Publishing
 
@@ -106,7 +122,7 @@ Available metrics from the Threads API:
 | reposts | Number of reposts |
 | quotes | Number of quote posts |
 
-These metrics feed into Threadflow's recommendation engine, which calculates:
+These metrics feed into Post Companion's recommendation engine, which calculates:
 - Best day of week to post
 - Best time of day to post
 - Optimal post length based on engagement
@@ -117,11 +133,11 @@ The `threads-mentions` function fetches posts where the user is mentioned. Event
 
 ## Replies
 
-The `threads-replies` function retrieves reply threads on the user's posts, enabling conversation tracking without leaving Threadflow.
+The `threads-replies` function retrieves reply threads on the user's posts, enabling conversation tracking without leaving Post Companion.
 
 ## Disconnecting
 
-The `threads-disconnect` function removes a user's Threads connection by deleting their `threads_profiles` row. This revokes the stored token.
+The `threads-disconnect` function removes a Threads account by deleting its `threads_profiles` row. This revokes the stored token. If the disconnected account was the active one, the next account in the list becomes active automatically.
 
 ## Configuration
 
