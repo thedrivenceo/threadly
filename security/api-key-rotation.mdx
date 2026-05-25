@@ -1,6 +1,6 @@
 ---
 title: "API Key Rotation"
-description: "Rotation schedules and procedures for all API keys, tokens, and secrets used by Threadflow."
+description: "Rotate API keys, OAuth secrets, webhook secrets, and integration tokens used by Post Companion."
 ---
 
 ## Rotation schedule
@@ -10,12 +10,11 @@ description: "Rotation schedules and procedures for all API keys, tokens, and se
 | Anthropic API key | Every 90 days | Scheduled |
 | Supabase access token | After each deployment session | Manual |
 | Meta App Secret | Immediately if exposed | Incident-based |
-| Webhook secret | Immediately if compromised | Incident-based |
+| OAuth state secret | Immediately if exposed | Incident-based |
+| Webhook secret | Immediately if compromised | User-initiated |
 | Threads OAuth tokens | Auto-expire after 60 days | Automatic on reconnect |
 
-## Rotation procedures
-
-### Anthropic API key
+## Anthropic API key
 
 <Steps>
   <Step title="Generate a new key" icon="key" title-type="p">
@@ -28,8 +27,8 @@ description: "Rotation schedules and procedures for all API keys, tokens, and se
     ```
   </Step>
 
-  <Step title="Verify the function works" icon="check" title-type="p">
-    Test content generation in the app to confirm the new key is active.
+  <Step title="Verify content generation" icon="check" title-type="p">
+    Test AI content generation in the app to confirm the new key is active.
   </Step>
 
   <Step title="Revoke the old key" icon="trash" title-type="p">
@@ -37,7 +36,7 @@ description: "Rotation schedules and procedures for all API keys, tokens, and se
   </Step>
 </Steps>
 
-### Supabase access token
+## Supabase access token
 
 Rotate this after each deployment session to limit exposure.
 
@@ -50,6 +49,7 @@ Rotate this after each deployment session to limit exposure.
     ```bash
     supabase login
     ```
+
     Paste the new token when prompted.
   </Step>
 
@@ -58,9 +58,9 @@ Rotate this after each deployment session to limit exposure.
   </Step>
 </Steps>
 
-### Meta App Secret
+## Meta App Secret
 
-Only rotate if the secret has been exposed. Rotating this will break the OAuth flow until the new secret is deployed.
+Only rotate if the secret has been exposed. Rotating this can affect OAuth until the new secret is deployed.
 
 <Steps>
   <Step title="Generate a new secret" icon="key" title-type="p">
@@ -73,57 +73,93 @@ Only rotate if the secret has been exposed. Rotating this will break the OAuth f
     ```
   </Step>
 
+  <Step title="Deploy OAuth functions" icon="rocket" title-type="p">
+    ```bash
+    supabase functions deploy threads-auth-login
+    supabase functions deploy threads-auth-callback
+    ```
+  </Step>
+
   <Step title="Verify OAuth flow" icon="check" title-type="p">
-    Disconnect and reconnect a Threads account to confirm the new secret works.
+    Connect or reconnect a Threads account to confirm the new secret works.
   </Step>
 </Steps>
 
 <Callout kind="alert">
-  Rotating the Meta App Secret will invalidate existing OAuth flows in progress. Coordinate timing to avoid disrupting users mid-connection.
+  Rotating the Meta App Secret invalidates OAuth flows that are already in progress. Pick a quiet window when possible.
 </Callout>
 
-### Webhook secret
+## OAuth state secret
 
-Rotate immediately if the secret is compromised. External tools sending webhooks will need the new value.
+Post Companion signs the Threads OAuth `state` parameter with `THREADS_OAUTH_STATE_SECRET`. Rotate it if it is exposed or if you rotate the OAuth security configuration.
 
 <Steps>
-  <Step title="Generate a new secret" icon="key" title-type="p">
-    Create a strong random string:
+  <Step title="Generate a long secret" icon="key" title-type="p">
+    Generate at least 32 random bytes. A 64-character hex value is a good default.
 
     ```bash
     openssl rand -hex 32
     ```
   </Step>
 
-  <Step title="Update the Supabase secret" icon="upload" title-type="p">
+  <Step title="Set the Supabase secret" icon="upload" title-type="p">
     ```bash
-    supabase secrets set WEBHOOK_SECRET=new_secret_here
+    supabase secrets set THREADS_OAUTH_STATE_SECRET=new_secret_here
     ```
   </Step>
 
-  <Step title="Update external tools" icon="settings" title-type="p">
-    Update the `x-webhook-secret` header value in any external tools (Make, Zapier, etc.) that send webhooks to Threadflow.
+  <Step title="Deploy OAuth functions" icon="rocket" title-type="p">
+    ```bash
+    supabase functions deploy threads-auth-login
+    supabase functions deploy threads-auth-callback
+    ```
+  </Step>
+
+  <Step title="Test profile connection" icon="check" title-type="p">
+    Add a Threads profile from the Accounts page and confirm the popup returns successfully.
   </Step>
 </Steps>
 
-### Threads OAuth tokens
+## Webhook secret
 
-These rotate automatically. No manual action is needed.
+Each Threads profile has its own webhook secret. Rotate it from Settings if the secret is compromised or shared with the wrong tool.
+
+<Steps>
+  <Step title="Open Settings" icon="settings" title-type="p">
+    Open **Settings** and find the Webhook section for the active Threads profile.
+  </Step>
+
+  <Step title="Regenerate the secret" icon="refresh-cw" title-type="p">
+    Click the regenerate button next to the webhook secret and confirm the warning.
+  </Step>
+
+  <Step title="Update external tools" icon="workflow" title-type="p">
+    Update the `x-webhook-secret` header value in Make, Zapier, or any custom scripts.
+  </Step>
+</Steps>
+
+<Callout kind="alert">
+  The old webhook secret stops working immediately after regeneration.
+</Callout>
+
+## Threads OAuth tokens
+
+These rotate automatically. No manual action is needed for normal operation.
 
 - Long-lived tokens last 60 days
-- When a user reconnects their Threads account, a fresh token is issued
-- The `threads-auth-callback` function handles the exchange automatically
-- If a token expires before reconnection, the user sees a "Reconnect" prompt
+- Reconnecting a Threads account issues a fresh token
+- The `threads-auth-callback` function handles the token exchange
+- If a token expires before reconnection, the user should reconnect the profile
 
 ## Monitoring for exposed secrets
 
 If you find a secret exposed in code, logs, or a public repository:
 
-1. **Rotate the exposed secret immediately** using the procedures above
+1. Rotate the exposed secret immediately using the procedures above
 2. Check git history for the exposure and remove it
 3. Review access logs for unauthorized usage during the exposure window
-4. Update the `.env.example` file if needed (never the `.env` file itself)
+4. Update sample environment files if needed, but never commit real secrets
 
 <Callout kind="danger">
-  If the Supabase service role key is exposed, contact Supabase support immediately. This key bypasses all RLS policies and grants full database access.
+  If the Supabase service role key is exposed, contact Supabase support immediately. This key bypasses RLS policies and grants full database access.
 </Callout>
