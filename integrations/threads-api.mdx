@@ -1,6 +1,6 @@
 ---
 title: "Threads API Integration"
-description: "How Post Companion connects to Meta's Threads API for OAuth, publishing, insights, mentions, and replies."
+description: "How Post Companion connects to Meta's Threads API for OAuth, publishing, insights, mentions, replies, and multi-profile account switching."
 ---
 
 ## Overview
@@ -17,10 +17,12 @@ All Threads API communication happens through Supabase Edge Functions. The front
 
 ## OAuth flow
 
-Post Companion uses Meta's OAuth 2.0 flow to connect Threads accounts. The flow opens in a **popup window** so users never leave the current page. Two edge functions handle it:
+Post Companion uses Meta's OAuth 2.0 flow to connect Threads accounts. The flow opens in a popup window so users stay in the current page.
 
-- `threads-auth-login` initiates the flow and returns the Meta OAuth URL
-- `threads-auth-callback` completes it, exchanges the code for a long-lived token, and stores the profile
+Two edge functions handle it:
+
+- `threads-auth-login` starts the flow and returns the Meta OAuth URL
+- `threads-auth-callback` completes the flow, exchanges the code for a long-lived token, and stores the profile
 
 ```mermaid
 sequenceDiagram
@@ -32,112 +34,111 @@ sequenceDiagram
     participant DB as Database
 
     User->>App: Click "Connect Threads"
-    App->>Login: POST /functions/v1/threads-auth-login
-    Login-->>App: { url: "https://threads.net/oauth/..." }
-    App->>User: Opens popup window to Meta
+    App->>Login: POST with user JWT
+    Login->>Login: Validate user JWT and sign OAuth state
+    Login-->>App: Return Meta OAuth URL
+    App->>User: Open popup window to Meta
     User->>Meta: Grant permissions
-    Meta->>Callback: Redirect with ?code=xxx
-    Callback->>Meta: POST /oauth/access_token (short-lived)
-    Meta-->>Callback: Short-lived token
-    Callback->>Meta: GET /access_token?grant_type=th_exchange_token
-    Meta-->>Callback: Long-lived token (60 days)
+    Meta->>Callback: Redirect with code and signed state
+    Callback->>Callback: Verify signed state and expiry
+    Callback->>Meta: Exchange code for token
+    Meta-->>Callback: Long-lived token
     Callback->>DB: Upsert threads_profiles row
-    Callback-->>User: Redirect to app origin (closes popup)
-    App->>App: Detects popup return, refreshes profile
+    Callback-->>User: Redirect to app origin
+    App->>App: Detect popup return and refresh profile
 ```
+
+### OAuth gateway configuration
+
+Meta calls `threads-auth-callback` directly, so that callback cannot include a Supabase user auth header. The OAuth functions are configured with Supabase gateway JWT verification disabled, then they apply their own checks inside the function.
+
+```toml
+[functions.threads-auth-login]
+verify_jwt = false
+
+[functions.threads-auth-callback]
+verify_jwt = false
+```
+
+This is intentional:
+
+- `threads-auth-login` still validates the signed-in user with the Authorization header inside the function
+- `threads-auth-callback` validates the signed OAuth `state`, including signature and expiry
+- The callback stores data only for the user ID embedded in the verified state
+
+<Callout kind="info">
+  The app domain `https://app.postcompanion.app` is an allowed OAuth redirect origin. Local development origins are also supported.
+</Callout>
 
 ### Required scopes
 
 The OAuth request includes these Threads API scopes:
 
-- `threads_basic` - Read profile information
-- `threads_content_publish` - Publish posts
-- `threads_read_replies` - Read replies to posts
-- `threads_manage_insights` - Access engagement metrics
-- `threads_manage_replies` - Manage reply interactions
-
-### Token lifecycle
-
-| Token type | Duration | Storage |
-|------------|----------|---------|
-| Short-lived | ~1 hour | Never stored, exchanged immediately |
-| Long-lived | 60 days | Encrypted in `threads_profiles.access_token` |
-
-<Callout kind="alert">
-  Long-lived tokens expire after 60 days. When a user reconnects their Threads account, the callback function automatically exchanges for a fresh long-lived token.
-</Callout>
+- `threads_basic` to read profile information
+- `threads_content_publish` to publish posts
+- `threads_read_replies` to read replies to posts
+- `threads_manage_insights` to access engagement metrics
+- `threads_manage_replies` to manage reply interactions
 
 ## Multi-account support
 
-Users can connect more than one Threads account (Free: 1, Pro: 3, Team: 10). Each connected account has a row in the `threads_profiles` table with an `is_active` flag.
+Users can connect more than one Threads account.
+
+| Plan | Connected Threads accounts |
+|------|----------------------------|
+| Free | 1 |
+| Pro | 3 |
+| Team | 10 |
+
+Each connected account has a row in the `threads_profiles` table with an `is_active` flag.
 
 ### Switching accounts
 
-The `threads-switch-account` edge function sets `is_active = true` for the chosen account and `is_active = false` for all others (for that user). Switching is immediate — the sidebar dropdown updates all open pages without a page reload.
+The `threads-switch-account` edge function sets `is_active = true` for the chosen account and `is_active = false` for all others owned by that user.
 
-All posts are tagged with a `threads_user_id` column so each account's content is kept separate. The active account's ID is used as a filter on every query for posts, categories, and analytics.
+All account-specific data uses `threads_user_id` so each profile stays separate.
 
-### Account switcher
+Profile-scoped data includes:
 
-The sidebar profile area shows a chevron when more than one account is connected. Clicking it opens a dropdown of all accounts with a checkmark on the active one. Selecting an account calls `threads-switch-account` and refreshes all page data live.
+- Posts and scheduled content
+- Content Bank drafts and pending review items
+- Categories and content types
+- Inspiration
+- Brand voice, goals, templates, writing samples, and custom prompts
+- Follower history, analytics, and dashboard metrics
+- Webhook secrets
 
 ## Publishing
 
 The `threads-publish` edge function handles posting to Threads. It supports both single posts and multi-post threads.
-
-### Single post flow
-
-1. Create a media container via `POST /threads` with the post text
-2. Wait for container to process
-3. Publish the container via `POST /threads_publish`
-
-### Thread (multi-post) flow
-
-1. Create a media container for each post in the thread
-2. Create a carousel container referencing all child containers
-3. Publish the carousel container
 
 ### Post status lifecycle
 
 ```mermaid
 stateDiagram-v2
     [*] --> draft: User creates post
-    draft --> scheduled: User sets date/time
-    scheduled --> published: auto-publish cron or manual publish
+    draft --> pending: User saves for review
+    pending --> scheduled: User approves
+    draft --> scheduled: User schedules
+    scheduled --> published: Auto-publish or manual publish
     draft --> published: Direct publish
     published --> [*]
 ```
 
-## Insights
+## Insights, mentions, and replies
 
-The `threads-insights` function fetches engagement metrics for published posts.
+The Threads integration also powers:
 
-Available metrics from the Threads API:
-
-| Metric | Description |
-|--------|-------------|
-| views | Number of times the post was viewed |
-| likes | Number of likes |
-| replies | Number of replies |
-| reposts | Number of reposts |
-| quotes | Number of quote posts |
-
-These metrics feed into Post Companion's recommendation engine, which calculates:
-- Best day of week to post
-- Best time of day to post
-- Optimal post length based on engagement
-
-## Mentions
-
-The `threads-mentions` function fetches posts where the user is mentioned. Events also arrive in real time via the Threads webhook.
-
-## Replies
-
-The `threads-replies` function retrieves reply threads on the user's posts, enabling conversation tracking without leaving Post Companion.
+| Function | Purpose |
+|----------|---------|
+| `threads-insights` | Fetches views, likes, replies, reposts, and quote metrics |
+| `threads-mentions` | Fetches posts where the user is mentioned |
+| `threads-replies` | Fetches reply threads on the user's posts |
+| `threads-webhook` | Receives real-time Meta webhook events |
 
 ## Disconnecting
 
-The `threads-disconnect` function removes a Threads account by deleting its `threads_profiles` row. This revokes the stored token. If the disconnected account was the active one, the next account in the list becomes active automatically.
+The `threads-disconnect` function removes a Threads account by deleting its `threads_profiles` row. If the disconnected account was active, the next account in the list becomes active automatically.
 
 ## Configuration
 
@@ -147,6 +148,14 @@ All Threads API credentials are stored as Supabase secrets:
 |--------|---------|
 | `THREADS_APP_ID` | Meta App ID |
 | `THREADS_APP_SECRET` | Meta App Secret |
-| `THREADS_REDIRECT_URI` | OAuth callback URL |
+| `THREADS_OAUTH_STATE_SECRET` | HMAC secret for signed OAuth state |
+| `ALLOWED_REDIRECT_ORIGINS` | Optional comma-separated allowed app origins |
+| `APP_ORIGIN` | Optional fallback app origin |
+
+The OAuth callback URL uses the Supabase functions domain:
+
+```text
+https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/threads-auth-callback
+```
 
 See [API Key Rotation](/security/api-key-rotation) for the rotation schedule.
