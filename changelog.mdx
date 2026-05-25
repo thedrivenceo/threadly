@@ -3,6 +3,34 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-25" description="v2.0.9" tags={["Improvement", "Fix", "Security"]}>
+  ### Threads OAuth Connection Fix
+
+  Adding a new Threads profile now works from `app.postcompanion.app`. The OAuth functions explicitly allow the app domain and the callback can receive Meta redirects without a user auth header.
+
+  - `threads-auth-login` accepts `app.postcompanion.app` as a redirect origin
+  - `threads-auth-callback` verifies the signed OAuth state after the Supabase gateway allows the callback through
+  - The app now surfaces clearer Threads connection errors when a function returns a specific message
+
+  ### Webhook Security and Profile Isolation
+
+  Webhook and profile-scoped data handling are stricter across the app.
+
+  - Webhook URLs now use `https://api.postcompanion.app/functions/v1/webhook-create-post`
+  - Webhook secrets must be sent in the `x-webhook-secret` header
+  - You can regenerate a webhook secret from Settings for the active profile
+  - Content Bank, Calendar, Categories, Inspiration, Voice of Customer, templates, and writing samples now guard updates and deletes by active Threads profile
+
+  ### Endpoint Hardening
+
+  AI generation and URL import now enforce server-side access and usage checks.
+
+  - AI generation requires a signed-in Pro, Team, or admin user and an active Threads profile
+  - URL import requires a signed-in paid user, validates public URLs, limits request size, and rate-limits imports per active profile
+  - Build and lint checks now run cleanly with less noisy project defaults
+</Update>
+
+
 <Update label="2026-05-25" description="v2.0.8" tags={["Feature", "Improvement", "Fix", "Security"]}>
   ### Multi-Account Per-Profile Data
 
