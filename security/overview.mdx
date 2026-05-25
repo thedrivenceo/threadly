@@ -1,219 +1,166 @@
 ---
 title: "Security Overview"
-description: "Per-user webhook secrets, rate limiting, Row Level Security, admin access controls, and data protection in Post Companion."
+description: "Authentication, profile isolation, webhook secrets, rate limiting, OAuth state validation, and data protection in Post Companion."
 ---
 
 ## Security model
 
-Post Companion's security is built on seven layers:
+Post Companion's security is built on these layers:
 
 1. **Authentication and password policy** with email verification, strong passwords, and leaked password detection
-2. **Supabase Auth** for user identity and JWT verification
-3. **Row Level Security (RLS)** for data isolation between users
-4. **Per-user webhook secrets** for secure external integrations
-5. **AI rate limiting** to prevent abuse and cost overruns
-6. **Admin access controls** via environment variables
-7. **CORS restrictions** for origin validation
+2. **Supabase Auth** for user identity and session management
+3. **Row Level Security (RLS)** for user-level data isolation
+4. **Active profile scoping** with `threads_user_id` for connected Threads accounts
+5. **Per-profile webhook secrets** for secure external integrations
+6. **Server-side plan checks** for AI, URL import, webhooks, and scheduling limits
+7. **Rate limiting and input validation** on AI generation and URL import
+8. **Signed OAuth state** for Threads OAuth protection
+9. **Admin access controls** via environment variables
 
-## Authentication and password policy
+## Active profile isolation
 
-Post Companion uses Supabase Auth for all user authentication. The following security policies are enforced at the platform level.
+A user can connect multiple Threads profiles. Post Companion stores the active profile in `threads_profiles` and scopes profile-specific data by `threads_user_id`.
 
-### Email verification
+Profile-scoped tables and features include:
 
-All new users must confirm their email address before they can access the app. A confirmation link is sent on signup. Users cannot log in until they verify.
+- `posts`
+- `content_categories`
+- `inspirations`
+- `voice_of_customer`
+- `user_settings`
+- `user_templates`
+- `user_writing_samples`
+- `user_prompts`
+- `follower_history`
 
-### Password requirements
+This keeps content, categories, goals, inspiration, brand voice, templates, analytics, and webhook secrets separate for each connected profile.
 
-Passwords must meet all of the following criteria:
+<Callout kind="success">
+  Switching profiles updates the Dashboard, Calendar, Content Bank, Goals, Categories, Inspiration, and brand settings to the active profile.
+</Callout>
 
-- Minimum 8 characters
-- At least one lowercase letter
-- At least one uppercase letter
-- At least one digit
-- Checked against known leaked password databases (compromised passwords are rejected)
+## Per-profile webhook secrets
 
-### Password changes
+Every active Threads profile has its own cryptographically generated webhook secret. External tools use that secret to send content into the profile's Content Bank.
 
-- Changing your password requires entering your current password first
-- Password changes trigger a secure re-authentication flow
-- Password reset emails use a 6-digit OTP code
+### How it works
 
-### Session security
+- A 32-byte hex secret is generated for the profile settings row
+- The secret is stored in `user_settings.webhook_secret`
+- The secret is unique across non-empty webhook secrets
+- The `webhook-create-post` function looks up the profile by secret
+- The secret must be sent in the `x-webhook-secret` header
 
-- Sessions are managed by Supabase Auth with JWT tokens
-- Tokens expire according to Supabase default settings
-- Each device maintains its own session
+```bash
+curl -X POST https://api.postcompanion.app/functions/v1/webhook-create-post \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: your_unique_secret_here" \
+  -d '{"content": "Your post text"}'
+```
+
+## Webhook secret rotation
+
+Users can regenerate a webhook secret from Settings. The old secret stops working immediately.
+
+Use rotation when:
+
+- A secret was pasted into the wrong tool
+- A team member should no longer have webhook access
+- A Make, Zapier, or custom automation was compromised
+- You want to rotate secrets as part of a regular security review
+
+See [API Key Rotation](/security/api-key-rotation) for the full procedure.
+
+## AI generation hardening
+
+AI generation is protected by server-side checks.
+
+| Control | Behavior |
+|---------|----------|
+| Authentication | Requires a signed-in user |
+| Plan access | Requires Pro, Team, or admin access |
+| Profile access | Requires an active Threads profile |
+| Daily limit | 100 generations per active profile |
+| Input size | Rejects very large prompts before calling Anthropic |
+
+## URL import hardening
+
+URL import is protected before the app fetches external content.
+
+| Control | Behavior |
+|---------|----------|
+| Authentication | Requires a signed-in user |
+| Plan access | Requires Pro, Team, or admin access |
+| Rate limit | Limits imports per active profile |
+| URL validation | Allows only public `http` and `https` URLs |
+| Private network protection | Blocks localhost, private IPs, and private DNS targets |
+| Response limits | Enforces timeouts, redirect limits, content type checks, and page size limits |
+
+## Threads OAuth security
+
+Threads OAuth uses signed state validation.
+
+- `threads-auth-login` validates the signed-in user inside the function
+- The function signs a state payload with `THREADS_OAUTH_STATE_SECRET`
+- `threads-auth-callback` verifies the state signature and expiry before storing tokens
+- The callback accepts Meta redirects without a Supabase auth header because Meta calls it directly
+
+The OAuth functions are configured with Supabase gateway JWT verification disabled, then they apply their own checks:
+
+```toml
+[functions.threads-auth-login]
+verify_jwt = false
+
+[functions.threads-auth-callback]
+verify_jwt = false
+```
 
 <Callout kind="info">
-  These policies are enforced by Supabase Auth at the infrastructure level. They cannot be bypassed by the frontend or API.
+  This configuration is required for the Meta callback. The callback still requires a valid signed state before it writes any account data.
 </Callout>
 
 ## Secrets management
 
-All sensitive credentials are stored as Supabase secrets. They are never committed to code.
+All sensitive credentials are stored as Supabase secrets or platform environment variables.
 
 | Secret | Purpose | Set via |
 |--------|---------|---------|
 | `ANTHROPIC_API_KEY` | Claude AI content generation | `supabase secrets set` |
 | `THREADS_APP_ID` | Meta App ID for OAuth | `supabase secrets set` |
 | `THREADS_APP_SECRET` | Meta App Secret for OAuth | `supabase secrets set` |
-| `ALLOWED_ORIGINS` | Comma-separated allowed CORS origins | `supabase secrets set` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS (auto-set by Supabase) | Supabase dashboard |
-
-<Callout kind="info">
-  The `VITE_ADMIN_EMAILS` environment variable controls admin access on the frontend. Set it in your Vercel project settings as a comma-separated list of email addresses.
-</Callout>
+| `THREADS_OAUTH_STATE_SECRET` | Signed OAuth state protection | `supabase secrets set` |
+| `ADMIN_EMAILS` | Backend admin access | `supabase secrets set` |
+| `ALLOWED_REDIRECT_ORIGINS` | Allowed OAuth app origins | `supabase secrets set` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side privileged database access | Supabase managed |
+| `VITE_ADMIN_EMAILS` | Frontend admin navigation | Vercel environment variable |
 
 <Callout kind="danger">
-  The `.env` file is included in `.gitignore`. If you see any API key, token, or secret in a code file, stop and remove it immediately.
+  Never commit `.env` files or real secrets. If a secret appears in source code or logs, rotate it immediately.
 </Callout>
-
-## Per-user webhook secrets
-
-Every user gets a unique, cryptographically generated webhook secret. This replaced the previous shared secret that was the same for all users.
-
-### How it works
-
-- A 32-byte hex secret is generated when a user's settings record is created
-- The secret is stored in the `user_settings` table
-- Users can view and copy their secret from the Settings page
-- The `webhook-create-post` edge function looks up the user by their secret, not by email
-
-### Why this matters
-
-With per-user secrets:
-- If one user's secret is leaked, only their account is affected
-- No user can push content into another user's Content Bank
-- The secret identifies who owns the webhook request, so no email parameter is needed
-
-```bash
-# Webhook request using per-user secret
-curl -X POST https://your-project.supabase.co/functions/v1/webhook-create-post \
-  -H "Content-Type: application/json" \
-  -H "x-webhook-secret: your_unique_secret_here" \
-  -d '{"content": "Your post text"}'
-```
-
-## AI rate limiting
-
-AI content generation is rate-limited per user per day to prevent abuse and control API costs.
-
-| Plan | Daily AI generations |
-|------|---------------------|
-| Free | 10 per day |
-| Pro | 100 per day |
-| Team | 100 per day |
-
-### How it works
-
-- The `user_settings` table tracks `ai_generations_today` and `ai_generations_reset_at`
-- Each call to `generate-threads` increments the counter
-- The counter resets automatically at the start of each new day
-- When the limit is reached, the function returns a `429` status with a clear error message
-
-<Callout kind="info">
-  Rate limits apply to all AI generation: content repurposing, voice-to-text processing, and hashtag generation.
-</Callout>
-
-## Row Level Security
-
-RLS is enabled on every table. All queries from the frontend go through the Supabase anon key, which enforces these policies.
-
-### Data isolation
-
-Each table has policies that check `auth.uid()` against the row's `user_id` column. Users can only access their own data across all tables:
-
-- `posts`, `threads_profiles`, `content_categories`, `inspirations`
-- `user_settings`, `user_templates`, `user_writing_samples`
-- `user_plans`, `user_prompts`, `team_members`
-- `follower_history`, `threads_webhook_events`
-
-### Service role bypass
-
-Two scenarios use the service role key to bypass RLS:
-
-1. **Cron jobs** (auto-publish, sync-followers) need to read all users' data
-2. **Admin dashboard** aggregates stats across all users
-3. **Webhook endpoint** looks up users by webhook secret
-
-The service role key is only accessible inside edge functions via `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')`. It is never sent to the frontend.
-
-## Admin access controls
-
-Admin access is controlled by the `VITE_ADMIN_EMAILS` environment variable on the frontend and `ADMIN_EMAILS` on the backend.
-
-### How it works
-
-- Admin emails are defined in a single shared module (`src/lib/admin.ts`)
-- The module reads from `VITE_ADMIN_EMAILS` and falls back to hardcoded defaults
-- Admin users automatically get the Team plan and owner permissions
-- The Admin page, team management, and billing are restricted to admin emails
-- To add or remove an admin, update the environment variable and redeploy
-
-<Callout kind="alert">
-  Changing admin emails requires a Vercel redeploy for frontend changes and updating the `ADMIN_EMAILS` Supabase secret for edge function changes.
-</Callout>
-
-## Data storage
-
-All user data is stored in Supabase, not in the browser. This ensures data persists across devices and browsers.
-
-| Data | Table | Previously |
-|------|-------|------------|
-| Style guide answers | `user_settings` | localStorage |
-| Brand voice document | `user_settings` | localStorage |
-| Goals and posting frequency | `user_settings` | localStorage |
-| Content templates | `user_templates` | localStorage |
-| Writing samples | `user_writing_samples` | localStorage |
-| Custom AI prompts | `user_prompts` | Supabase (always was) |
-
-The only data that remains in localStorage is per-device state:
-- Theme preference (light/dark)
-- Dismissed reply IDs
-- Celebration tracking (so confetti only fires once per goal)
-
-## CORS restrictions
-
-Edge functions support origin restriction via the `ALLOWED_ORIGINS` Supabase secret.
-
-- Set to a comma-separated list of allowed origins (e.g., `https://musecraft.com,https://www.musecraft.com`)
-- Falls back to `*` (allow all) if not set, for development flexibility
-- Webhook endpoints allow all origins since external tools (Make, Zapier) need access
 
 ## Edge function authentication
 
-Each edge function handles authentication based on its use case:
-
 | Auth method | Used by |
 |-------------|---------|
-| User JWT (Authorization header) | Content generation, profile, insights, publishing, settings |
-| Per-user webhook secret | webhook-create-post |
-| No auth (public redirect) | threads-auth-login, threads-auth-callback |
-| Meta signature verification | threads-webhook |
-| Service role (cron trigger) | auto-publish, sync-followers |
-| Admin email check + JWT | admin-dashboard, admin-reset-password |
-
-## OAuth token security
-
-Threads OAuth tokens are stored in the `threads_profiles` table:
-
-- RLS ensures only the token owner can access their row
-- Long-lived tokens expire after 60 days
-- Reconnecting automatically refreshes the token
-- Disconnecting deletes the token from the database
-- Multi-account support uses `is_active` flag, with a partial unique index ensuring only one active account per user
+| User JWT checked inside the function | Threads auth login, content generation, profile, insights, publishing |
+| Per-profile webhook secret | webhook-create-post, save-inspiration |
+| Signed OAuth state | threads-auth-callback |
+| Meta webhook verification token | threads-webhook subscription verification |
+| Service role for cron | auto-publish, sync-followers |
+| Admin email check plus JWT | admin-dashboard, admin-reset-password |
 
 ## Security checklist
 
 - [ ] `.env` is in `.gitignore`
 - [ ] No API keys in source code
-- [ ] RLS enabled on all tables
+- [ ] RLS enabled on user-facing tables
+- [ ] Profile-scoped tables filter by `threads_user_id`
 - [ ] Service role key only used in edge functions
-- [ ] Per-user webhook secrets generated and validated
-- [ ] AI rate limiting active on generate-threads
-- [ ] Admin emails set via environment variable
-- [ ] CORS origins restricted in production
-- [ ] All user data stored in Supabase, not localStorage
-- [ ] OAuth tokens secured with RLS
-- [ ] API keys rotated on schedule (see [API Key Rotation](/security/api-key-rotation))
+- [ ] Webhook secrets generated per profile and sent only in headers
+- [ ] Webhook secret rotation available in Settings
+- [ ] AI generation gated and rate-limited server-side
+- [ ] URL import blocks private networks and large responses
+- [ ] OAuth state signing configured with `THREADS_OAUTH_STATE_SECRET`
+- [ ] Admin emails set in frontend and backend environments
+- [ ] OAuth and webhook functions deployed after security config changes
+- [ ] API keys rotated on schedule
