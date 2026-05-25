@@ -127,6 +127,22 @@
             ]
           },
           {
+            "group": "Security",
+            "icon": "shield",
+            "pages": [
+              {
+                "title": "Overview",
+                "path": "security/overview",
+                "icon": "lock"
+              },
+              {
+                "title": "API Key Rotation",
+                "path": "security/api-key-rotation",
+                "icon": "refresh-cw"
+              }
+            ]
+          },
+          {
             "group": "Sample Endpoints",
             "openapi": "openapi.yaml"
           }
@@ -147,22 +163,6 @@
             "path": "help-center",
             "icon": "home",
             "ask-feedback": false
-          },
-          {
-            "group": "Security",
-            "icon": "shield",
-            "pages": [
-              {
-                "title": "Overview",
-                "path": "security/overview",
-                "icon": "lock"
-              },
-              {
-                "title": "API Key Rotation",
-                "path": "security/api-key-rotation",
-                "icon": "refresh-cw"
-              }
-            ]
           },
           {
             "group": "Billing",
