@@ -15,14 +15,52 @@
         "icon": "book",
         "groups": [
           {
+            "group": "Webhooks",
+            "icon": "webhook",
+            "pages": [
+              {
+                "title": "Incoming (Threads)",
+                "path": "webhooks/incoming",
+                "icon": "arrow-down-left"
+              },
+              {
+                "title": "Outgoing (Create Post)",
+                "path": "webhooks/outgoing",
+                "icon": "arrow-up-right"
+              }
+            ]
+          },
+          {
+            "group": "FAQs",
+            "icon": "help-circle",
+            "expandable": false,
+            "pages": [
+              {
+                "title": "Overview",
+                "path": "edge-functions/overview",
+                "icon": "list"
+              },
+              {
+                "title": "Content Generation",
+                "path": "edge-functions/content-generation",
+                "icon": "pen-tool"
+              },
+              {
+                "title": "Threads Integration",
+                "path": "edge-functions/threads-integration",
+                "icon": "link"
+              },
+              {
+                "title": "Automation",
+                "path": "edge-functions/automation",
+                "icon": "clock"
+              }
+            ]
+          },
+          {
             "group": "Start Here",
             "icon": "rocket",
             "pages": [
-              {
-                "title": "Introduction",
-                "path": "introduction",
-                "icon": "home"
-              },
               {
                 "title": "Quickstart",
                 "path": "quickstart",
@@ -100,52 +138,15 @@
         "icon": "help-circle",
         "pages": [
           {
-            "title": "Help Center",
-            "path": "help-center",
+            "title": "Introduction",
+            "path": "introduction",
             "icon": "home"
           },
           {
-            "group": "FAQs",
-            "icon": "help-circle",
-            "expandable": false,
-            "pages": [
-              {
-                "title": "Overview",
-                "path": "edge-functions/overview",
-                "icon": "list"
-              },
-              {
-                "title": "Content Generation",
-                "path": "edge-functions/content-generation",
-                "icon": "pen-tool"
-              },
-              {
-                "title": "Threads Integration",
-                "path": "edge-functions/threads-integration",
-                "icon": "link"
-              },
-              {
-                "title": "Automation",
-                "path": "edge-functions/automation",
-                "icon": "clock"
-              }
-            ]
-          },
-          {
-            "group": "Webhooks",
-            "icon": "webhook",
-            "pages": [
-              {
-                "title": "Incoming (Threads)",
-                "path": "webhooks/incoming",
-                "icon": "arrow-down-left"
-              },
-              {
-                "title": "Outgoing (Create Post)",
-                "path": "webhooks/outgoing",
-                "icon": "arrow-up-right"
-              }
-            ]
+            "title": "Help Center",
+            "path": "help-center",
+            "icon": "home",
+            "ask-feedback": false
           },
           {
             "group": "Security",
@@ -199,5 +200,6 @@
   "seo": {
     "robots:index": false,
     "robots:follow": false
-  }
+  },
+  "initialRoute": "introduction"
 }
