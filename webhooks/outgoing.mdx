@@ -1,97 +1,140 @@
 ---
 title: "Outgoing Webhook (Create Post)"
-description: "API reference for the webhook-create-post endpoint that allows external tools to push content into Threadflow's Content Bank."
+description: "Send content from Make, Zapier, or custom tools into the active Post Companion profile using a per-profile webhook secret."
 ---
 
 ## Overview
 
-The `webhook-create-post` edge function allows external tools (Make, Zapier, custom scripts) to push content directly into Threadflow's Content Bank.
+The `webhook-create-post` edge function lets external tools send posts or threads into Post Companion. Use it when you want Make, Zapier, a custom script, or another automation tool to create drafts, pending posts, or scheduled posts in your Content Bank.
 
-**Endpoint:** `POST https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post`
+**Endpoint:** `POST https://api.postcompanion.app/functions/v1/webhook-create-post`
+
+<Callout kind="alert">
+  Send the secret in the `x-webhook-secret` header. Secrets in the URL query string are not accepted.
+</Callout>
 
 ## Authentication
 
-Every request must include the `x-webhook-secret` header with a value matching the `WEBHOOK_SECRET` Supabase secret.
+Each Threads profile has its own webhook secret. The secret identifies the user and the profile that owns the webhook request.
 
 <ParamField header="x-webhook-secret" param-type="string" required="true" deprecated="false">
-  Shared secret for authenticating webhook requests. Must match the `WEBHOOK_SECRET` stored in Supabase secrets.
+  The profile-specific webhook secret from Settings. This must be sent as a request header.
 </ParamField>
 
 <ParamField header="Content-Type" param-type="string" required="true" deprecated="false">
   Must be `application/json`.
 </ParamField>
 
+Webhook access requires a Pro, Team, or admin account. If a plan does not include webhook access, the endpoint returns `403`.
+
+## Find your webhook URL and secret
+
+<Steps>
+  <Step title="Open Settings" icon="settings" title-type="p">
+    In Post Companion, open **Settings**.
+  </Step>
+
+  <Step title="Copy the webhook URL" icon="copy" title-type="p">
+    Copy the URL shown in the Webhook section. It should use the custom API domain:
+
+    ```text
+    https://api.postcompanion.app/functions/v1/webhook-create-post
+    ```
+  </Step>
+
+  <Step title="Copy the secret" icon="key" title-type="p">
+    Copy the secret and add it to your automation as the `x-webhook-secret` header.
+  </Step>
+</Steps>
+
 ## Request body
 
-<ParamField body="title" param-type="string" required="true" deprecated="false">
-  Title for the content item in the Content Bank.
+<ParamField body="content" param-type="string | string[]" required="true" deprecated="false">
+  The post text. Send a string for one post or an array of strings for a multi-post thread. Each post must be 500 characters or fewer.
 </ParamField>
 
-<ParamField body="content" param-type="string" required="true" deprecated="false">
-  The content body text.
+<ParamField body="status" param-type="string" required="false" deprecated="false">
+  Optional status. Accepted values are `draft`, `pending`, and `scheduled`. If omitted, the endpoint saves a draft unless you include a scheduled date.
 </ParamField>
 
-<ParamField body="source_url" param-type="string" required="false" deprecated="false">
-  Original URL where the content was found or published.
+<ParamField body="scheduled_date" param-type="string" required="false" deprecated="false">
+  Schedule date in `YYYY-MM-DD` format. If you send a date without a time, Post Companion chooses a best available time and saves the post as pending review.
 </ParamField>
 
-## Example request
+<ParamField body="scheduled_time" param-type="string" required="false" deprecated="false">
+  Schedule time in `HH:MM` 24-hour format. You must also send `scheduled_date`.
+</ParamField>
 
-<Request show-lines="true" tabs="cURL,JavaScript,Python">
+<ParamField body="category" param-type="string" required="false" deprecated="false">
+  Pillar category name. Post Companion matches it to a category for the profile tied to the webhook secret.
+</ParamField>
+
+<ParamField body="content_type" param-type="string" required="false" deprecated="false">
+  Content type category name. Post Companion matches it to a content type for the profile tied to the webhook secret.
+</ParamField>
+
+## Example requests
+
+<Request show-lines="true" tabs="Draft,Thread,Scheduled,JavaScript">
   ```bash
-  curl -X POST https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post \
+  curl -X POST https://api.postcompanion.app/functions/v1/webhook-create-post \
     -H "Content-Type: application/json" \
     -H "x-webhook-secret: your_webhook_secret" \
     -d '{
-      "title": "LinkedIn post about content systems",
-      "content": "Your content systems should work harder than you do...",
-      "source_url": "https://linkedin.com/post/123"
+      "content": "Your post text"
+    }'
+  ```
+
+  ```bash
+  curl -X POST https://api.postcompanion.app/functions/v1/webhook-create-post \
+    -H "Content-Type: application/json" \
+    -H "x-webhook-secret: your_webhook_secret" \
+    -d '{
+      "content": ["Post 1", "Post 2", "Post 3"],
+      "category": "Mindset",
+      "content_type": "Authority Post"
+    }'
+  ```
+
+  ```bash
+  curl -X POST https://api.postcompanion.app/functions/v1/webhook-create-post \
+    -H "Content-Type: application/json" \
+    -H "x-webhook-secret: your_webhook_secret" \
+    -d '{
+      "content": "Post text",
+      "status": "scheduled",
+      "scheduled_date": "2026-06-01",
+      "scheduled_time": "09:00"
     }'
   ```
 
   ```javascript
-  const response = await fetch(
-    'https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-webhook-secret': process.env.WEBHOOK_SECRET
-      },
-      body: JSON.stringify({
-        title: 'LinkedIn post about content systems',
-        content: 'Your content systems should work harder than you do...',
-        source_url: 'https://linkedin.com/post/123'
-      })
-    }
-  );
-  ```
+  const response = await fetch('https://api.postcompanion.app/functions/v1/webhook-create-post', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-secret': process.env.POST_COMPANION_WEBHOOK_SECRET
+    },
+    body: JSON.stringify({
+      content: 'Your post text',
+      category: 'Mindset',
+      content_type: 'Authority Post'
+    })
+  });
 
-  ```python
-  import requests
-
-  response = requests.post(
-      'https://xaoodbhmrkpcweedvoev.supabase.co/functions/v1/webhook-create-post',
-      headers={
-          'Content-Type': 'application/json',
-          'x-webhook-secret': 'your_webhook_secret'
-      },
-      json={
-          'title': 'LinkedIn post about content systems',
-          'content': 'Your content systems should work harder than you do...',
-          'source_url': 'https://linkedin.com/post/123'
-      }
-  )
+  const result = await response.json();
   ```
 </Request>
 
 ## Response
 
-<Response show-lines="true" tabs="201 Created,401 Unauthorized,400 Bad Request">
+<Response show-lines="true" tabs="200 Success,401 Unauthorized,403 Forbidden,400 Bad Request">
   ```json
   {
     "success": true,
-    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    "thread_id": "9db17a38-77c2-4a64-ae9e-a26db998d68a",
+    "posts_created": 1,
+    "status": "draft"
   }
   ```
 
@@ -103,42 +146,56 @@ Every request must include the `x-webhook-secret` header with a value matching t
 
   ```json
   {
-    "error": "Missing required field: content"
+    "error": "Webhook access requires Pro."
+  }
+  ```
+
+  ```json
+  {
+    "error": "Each post must be text between 1 and 500 characters."
   }
   ```
 </Response>
 
-## Response fields
+## Profile scoping
 
-<ResponseField name="success" field-type="boolean" required="true" deprecated="false">
-  `true` if the content was saved to the Content Bank.
-</ResponseField>
+The webhook secret is unique to one Threads profile. Requests sent with that secret can only create content for that profile.
 
-<ResponseField name="id" field-type="string" required="true" deprecated="false">
-  UUID of the newly created content_uploads record.
-</ResponseField>
+This means:
 
-<ResponseField name="error" field-type="string" required="false" deprecated="false">
-  Error message if the request failed.
-</ResponseField>
+- Content does not leak into another connected profile's Content Bank
+- Category and content type names are matched inside the same profile
+- Rotating one profile's secret does not affect another profile
 
-## Use cases
+## Regenerate a webhook secret
 
-| Tool | Automation |
-|------|-----------|
-| Make | When a new blog post is published, send the title and excerpt to the Content Bank |
-| Zapier | When a tweet is bookmarked, push it to Threadflow as inspiration |
-| Custom script | Batch import content from a spreadsheet or RSS feed |
+Use secret rotation when a webhook secret may have been shared or exposed.
+
+<Steps>
+  <Step title="Open Settings" icon="settings" title-type="p">
+    Open **Settings** and find the Webhook section.
+  </Step>
+
+  <Step title="Click regenerate" icon="refresh-cw" title-type="p">
+    Click the regenerate button next to the secret and confirm the action.
+  </Step>
+
+  <Step title="Update your automations" icon="workflow" title-type="p">
+    Replace the old `x-webhook-secret` header value in Make, Zapier, or your custom scripts.
+  </Step>
+</Steps>
+
+<Callout kind="alert">
+  Regenerating the secret immediately invalidates the old secret. Existing automations stop working until you update their header value.
+</Callout>
 
 ## Error handling
 
 | Status | Meaning |
 |--------|---------|
-| 201 | Content saved successfully |
-| 400 | Missing required fields (title or content) |
-| 401 | Invalid or missing webhook secret |
+| 200 | Content created successfully |
+| 400 | Invalid payload, status, date, time, or content length |
+| 401 | Missing or invalid webhook secret |
+| 403 | Plan does not include webhook access |
+| 405 | Method is not `POST` |
 | 500 | Internal server error |
-
-<Callout kind="tip">
-  When building automations, store the returned `id` so you can track which content items were pushed from external tools.
-</Callout>
