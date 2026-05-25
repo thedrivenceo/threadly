@@ -3,6 +3,41 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-25" description="v2.0.8" tags={["Feature", "Improvement", "Fix", "Security"]}>
+  ### Multi-Account Per-Profile Data
+
+  All views now scope to the currently active Threads account. Switching accounts from the sidebar dropdown immediately refreshes the Calendar, Content Bank, Dashboard, and Goals pages without a manual page reload.
+
+  - Calendar, Content Bank, Dashboard, and Goals only show posts for the active profile
+  - New posts are tagged to the active profile at creation time
+  - Switching accounts in the sidebar now live-updates all open pages
+
+  ### Calendar: Drag and Drop Rescheduling
+
+  Posts can now be dragged from one date to another directly on the calendar. Drop onto a date to reschedule, or drop onto a specific time slot to reschedule and set the time in one action.
+
+  ### Edit Thread: Threadstorm and Character Limit
+
+  - **Add post to thread**: an "Add post to thread" button at the bottom of the edit modal lets you expand any single post into a multi-post threadstorm
+  - **Remove posts**: each post shows a Remove button when the thread has more than one post
+  - **500-character limit**: a live counter (`x/500`) appears below every textarea, turning orange above 400 and red above 500. Saving is blocked if any post exceeds the limit.
+
+  ### Security Hardening
+
+  - **Webhook verification**: inbound webhook requests are now validated against your per-user webhook secret. Requests with an invalid or missing secret are rejected with a 403.
+  - **Webhook secret rotation**: you can rotate your webhook secret from Settings without affecting existing scheduled posts.
+  - **AI generation**: rate limiting and input validation tightened on the AI generation endpoint.
+  - **URL content import**: stricter URL allowlist and input sanitisation on the import endpoint.
+  - **Threads OAuth**: state parameter validation added to the OAuth callback to prevent CSRF attacks.
+
+  ### Bug Fixes
+
+  - Fixed posts being attributed to the wrong Threads profile after connecting multiple accounts (incorrect backfill at migration time)
+  - Fixed Dashboard and Goals showing posts from all accounts during initial profile loading
+  - Fixed a crash on the Dashboard page on first load
+</Update>
+
+
 <Update label="2026-04-13" description="v2.0.7" tags={["Improvement", "Fix"]}>
   ### App Renamed to Post Companion
 
