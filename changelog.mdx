@@ -3,6 +3,25 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.16" tags={["Feature", "Improvement"]}>
+  ### Calendar: Multi-Platform Edit Modal
+
+  Clicking a non-Threads post on the Calendar now opens an edit modal that matches the post's content type, instead of showing the threadstorm-shaped Edit Thread view. Substack, Email, Instagram, and Facebook posts all edit inline with the right fields. Instagram and Facebook show the same live feed-style preview as the Create page.
+
+  - **Substack edit**: title, subtitle, body, and tags.
+  - **Email edit**: subject, preheader, from email, reply-to email, and body.
+  - **Instagram Reel / Carousel / Photo edit**: the matching media URL field plus caption, with a live Instagram preview that updates as you type.
+  - **Facebook Reel / Carousel / Photo / Text edit**: the matching media or message field plus caption, with a live Facebook preview.
+  - The Content ID field is editable on every non-Threads post.
+  - Scheduled date and time pickers, Save, Cancel, and Delete buttons behave the same as before. The Delete button label switches between "Delete thread" and "Delete post" depending on the post type.
+
+  Threads posts continue to open the threadstorm composer exactly as before.
+
+  ### What This Closes
+
+  Together with the Create page changes, the multi-platform composer is now symmetrical: a Substack post you compose in Create can be opened from the Calendar and edited with the same fields you used to create it. The earlier limitation — non-Threads posts could only be edited via the MCP — is resolved.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.15" tags={["Feature"]}>
   ### Create: Email, Instagram, Facebook Composers
 
