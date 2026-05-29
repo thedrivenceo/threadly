@@ -3,6 +3,26 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.15" tags={["Feature"]}>
+  ### Create: Email, Instagram, Facebook Composers
+
+  The Create page now covers every UI-creatable content type. Pick the type from the dropdown and the form swaps to the right fields for that platform. Substack, Email, Instagram (Reel, Carousel, Photo), and Facebook (Reel, Carousel, Photo, Text) all compose directly in Post Companion now.
+
+  - **Email**: Subject line, preheader, from email, reply-to email, and body. From and reply-to live side by side on wider screens.
+  - **Instagram Reel**: video URL and caption. A live Instagram-style preview shows the play overlay on the video, the action row (heart, comment, share, save), and the caption with the standard `...more` truncation.
+  - **Instagram Carousel**: paste 2 to 10 slide image URLs (one per line) plus the caption. The preview shows dot indicators under the image and a slide counter in the top corner.
+  - **Instagram Photo**: image URL and caption. Same preview pattern.
+  - **Facebook Reel, Carousel, Photo, Text**: parallel inputs to Instagram with a Facebook-style preview (caption above the media, Like / Comment / Share row below). Text posts skip the media.
+
+  ### Content ID Field for All Non-Threads Posts
+
+  The Content ID input is now shown across every non-Threads composer. Paste the `BRAND-CODE-###` identifier from your content library (e.g. `UR-SS042`, `TDC-IGC007`, `TWJ-FBR003`) and Post Companion stores it on the post for downstream archiving and tracking.
+
+  ### Notes
+
+  Scheduled posts wait in Post Companion until the matching bridge skill or platform adapter pushes them through. Post Companion does not publish to Substack, Instagram, Facebook, or your email platform directly.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.14" tags={["Feature"]}>
   ### Create: Multi-Platform Composer
 
