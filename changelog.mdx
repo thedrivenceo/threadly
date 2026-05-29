@@ -3,6 +3,35 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.11" tags={["Feature", "Improvement"]}>
+  ### Post Companion MCP: Write Tools
+
+  The MCP now supports write operations alongside the existing read tools. This unlocks the workflow where content created in external tools (such as Claude Code) can be pushed into Post Companion directly, without a manual capture step.
+
+  All write tools are gated by the `mcp_multi_platform` feature flag and are off by default for all users. Admins enable the flag per user as part of staged rollout.
+
+  - `create_post(threadsUserId, contentType, content, payload?, contentId?, status?, scheduledDate?, scheduledTime?, topic?, categoryId?, externalId?, threadId?, threadOrder?)` creates a post of any supported content type. `contentType` defaults to `threads` so existing callers continue to work.
+  - `get_post(id)` fetches a single post by id, scoped to the current Threads profile.
+  - `update_post(id, fields...)` performs a partial update on a whitelisted set of fields (content, payload, contentId, externalId, topic, categoryId, status, scheduledDate, scheduledTime).
+  - `approve_post(id, scheduledDate?, scheduledTime?)` advances a draft or pending post. When a schedule is provided it moves straight to `scheduled`. Otherwise it sits at `approved` until a separate `set_schedule` call.
+  - `set_schedule(id, scheduledDate, scheduledTime?)` sets the schedule and moves the post to `scheduled`.
+  - `cancel_post(id)` marks the post as `cancelled`. The row is preserved for audit; nothing is deleted.
+
+  Input validation rejects unknown `contentType` and `status` values at the MCP layer with clear errors. Bad values never reach the database. All writes remain scoped by `(user_id, threads_user_id)` to match existing row-level security.
+
+  ### Post Companion MCP: Archive Tools
+
+  Three new tools coordinate with external archives that hold a copy of every published post. The sweep runs on the archive client, reads pending items from Post Companion, archives them, and reports success or failure back.
+
+  - `list_pending_archive(threadsUserId, limit?)` returns posts where `status = published` and `archive_state = pending`, ordered by `published_at` ascending.
+  - `mark_archived(id)` flips `archive_state` to `archived` after a successful archive.
+  - `mark_archive_failed(id, reason?)` flips `archive_state` to `failed` and stashes the failure reason in `payload.archive_error` for later debugging.
+
+  ### auth_status Response
+
+  `auth_status` now reports `mode` as `read_write` when the calling user has write tools enabled via the feature flag, and `read_only` otherwise. A new `writeToolsEnabled` boolean is also returned so MCP clients can branch on the tools available to them.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.10" tags={["Improvement"]}>
   ### Foundation: Multi-Platform Posts Schema
 
