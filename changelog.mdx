@@ -3,6 +3,19 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.13" tags={["Feature", "Improvement"]}>
+  ### Calendar: Multi-Platform Posts
+
+  The Calendar now shows Substack, Email, Instagram, and Facebook posts alongside Threads, with each one labelled by its channel so you can see at a glance what each scheduled item is.
+
+  - Non-Threads posts in compact calendar cells show a short channel label prefix (such as `SUBSTACK` or `IG REEL`) before the preview text.
+  - In the list view, non-Threads posts now show a kicker line above the body with the channel and content ID, such as `SUBSTACK · UR-SS042`.
+  - The preview body uses the most useful field per channel: Substack shows the post title, Email shows the subject line, Instagram and Facebook show the caption.
+  - Threads cards look identical to before. Nothing changes for existing Threads workflows.
+
+  This is the visual half of the multi-platform Calendar. Brand profile views, create dialog support for non-Threads content, and the edit modal are still Threads-only in this release and will land as later updates.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.12" tags={["Improvement"]}>
   ### Post Companion MCP: Multi-Platform Read Surface
 
