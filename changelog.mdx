@@ -3,6 +3,39 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.18" tags={["Feature", "Major Release"]}>
+  ### Meta: Direct Facebook and Instagram Publishing
+
+  Post Companion can now connect a Facebook Page along with its linked Instagram Business account and publish scheduled posts to both platforms directly through Meta's Graph API. No third-party scheduler in between.
+
+  All 7 Instagram and Facebook content types are supported end to end.
+
+  ### Connecting Your Accounts
+
+  - Settings has a new section called "Meta — Facebook & Instagram" with a Connect button. Click it to start the Facebook Login flow.
+  - You are asked to grant six permissions: `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`, `business_management`.
+  - On return, each Page you authorized appears as a row with the Page name, the linked Instagram handle (or "no IG linked"), connection status, and how many days are left on the access token before it needs refreshing.
+  - You can disconnect any individual Page at any time. The credentials are cleared from Post Companion immediately. Reconnect by clicking Connect again.
+
+  ### What Publishes Where
+
+  - **Instagram Photo**: posts a single image with the caption.
+  - **Instagram Reel**: uploads the video, waits for Meta to finish processing it, then publishes with caption and optional cover image.
+  - **Instagram Carousel**: uploads each slide image, bundles them into a carousel container, and publishes with the caption.
+  - **Facebook Photo**: posts a single image with caption to your Page.
+  - **Facebook Reel**: uploads the video reel with description to your Page.
+  - **Facebook Carousel**: uploads each slide image as unpublished, then posts a feed entry with the carousel attached and the caption as the message.
+  - **Facebook Text**: posts the message to your Page feed.
+
+  ### How Scheduling Works
+
+  The auto-publish cron now splits scheduled posts by platform. When an Instagram or Facebook post reaches its scheduled time, the right dispatcher runs and the post is published. On success, the post moves to `published` and stores the Meta-side ID. On failure, it moves to `failed` and the error is stashed in the payload so you can debug it from Post Companion.
+
+  ### Token Expiry
+
+  Meta Page access tokens are long-lived but expire after roughly 60 days. The Settings list shows how many days are left. When fewer than 10 days remain, the badge turns amber. Reconnect before expiry to keep scheduled posts dispatching.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.17" tags={["Feature", "Major Release"]}>
   ### Email: HighLevel (ServeSuite) Send Adapter
 
