@@ -3,6 +3,29 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.10" tags={["Improvement"]}>
+  ### Foundation: Multi-Platform Posts Schema
+
+  The `posts` table now supports content types beyond Threads. This is foundational work for the upcoming Content OS evolution. Your Threads workflows continue unchanged today, while the data model is ready for Substack, Email, Instagram, and Facebook posts in upcoming releases.
+
+  - New `content_type` column on `posts` defaults to `threads` for backward compatibility, with support for Substack, Email, Instagram (Reel, Carousel, Photo), and Facebook (Reel, Carousel, Photo, Text)
+  - New `payload` JSONB column carries platform-specific fields (titles, subjects, media URLs, slide URLs, body blocks)
+  - New `external_id` column stores the platform's post ID after publish
+  - New `content_id` column links posts to external content registries (such as a content library naming convention)
+  - New `archive_state` column tracks sync state for posts that need to land in an external archive (such as an Obsidian content library)
+  - New `published_at` timestamp separates actual publish time from scheduled time
+  - Status enum extended with `approved`, `failed`, and `cancelled` for richer lifecycle tracking
+
+  ### Foundation: Feature Flag System
+
+  A new `feature_flags` table lets new code paths ship to production behind per-user flags, so beta features can be dogfooded by specific users before general release.
+
+  - `feature_flags` table with `key`, `description`, `enabled_global`, and `enabled_for_users` fields
+  - `is_flag_enabled(flag_key, user_id)` helper function used by edge functions to gate logic
+  - Four starter flags seeded for the Content OS rollout: `content_os_v1`, `mcp_multi_platform`, `meta_direct`, and `email_v1`
+  - Unknown flag keys return `false` (fail-closed)
+</Update>
+
 <Update label="2026-05-25" description="v2.0.9" tags={["Improvement", "Fix", "Security"]}>
   ### Threads OAuth Connection Fix
 
