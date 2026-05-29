@@ -3,6 +3,24 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.12" tags={["Improvement"]}>
+  ### Post Companion MCP: Multi-Platform Read Surface
+
+  The existing MCP read tools now return the multi-platform schema fields introduced in v2.0.10. External tooling can finally see Substack, Email, IG, and FB content alongside Threads through the same query surface.
+
+  - `list_recent_posts` now returns `content_type`, `payload`, `content_id`, `external_id`, `archive_state`, and `published_at` in addition to the existing fields. A new optional `contentType` argument filters results to a single platform.
+  - `list_scheduled_posts` returns the same new fields. The status filter is widened from `scheduled | pending` to `scheduled | pending | approved`, so newly approved posts surface in the scheduling view.
+  - `list_content_bank_items` returns the same new fields and gains the same optional `contentType` filter.
+
+  ### Post Companion MCP: External Push Queue
+
+  A new tool exposes the queue of content that local bridge skills need to push to its target platform.
+
+  - `list_pending_external_pushes(threadsUserId, contentType?, limit?)` returns posts where `status` is `approved` or `scheduled` AND `external_id` is `NULL`. Read-only; no feature flag required.
+
+  This is the queue the upcoming local bridge skills poll. The first bridge — `pc-substack-bridge` — picks up Substack content from this queue, creates the draft via the local Substack MCP, and calls `update_post(externalId=...)` to close the loop. The same pattern applies to future Email, Instagram, Facebook, and Threads bridges.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.11" tags={["Feature", "Improvement"]}>
   ### Post Companion MCP: Write Tools
 
