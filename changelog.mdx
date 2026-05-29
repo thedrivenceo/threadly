@@ -3,6 +3,26 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.14" tags={["Feature"]}>
+  ### Create: Multi-Platform Composer
+
+  The Create page now supports content types beyond Threads. A new content type selector at the top of the page lets you pick what you are creating, and the form fields swap to match the platform.
+
+  Substack support ships first. Email, Instagram, and Facebook composers will follow as their phases ship.
+
+  - **Content type dropdown** added to the header row alongside Category and Template. Defaults to Threads, so the existing Threads composer is unchanged for everyone who does not switch types.
+  - **Substack composer** shows title, subtitle, body, tags, and content ID fields when you switch the type to Substack. The body is the post body in markdown; the rest map onto the standard Substack post fields.
+  - **Save Draft, Pending Review, and Schedule** all work for Substack posts. Scheduled Substack posts wait in Post Companion until the `pc-substack-bridge` local skill pushes them through to Substack at the scheduled time.
+  - **Publish to Threads** is hidden when you are creating a non-Threads post. Post Companion does not publish to Substack directly; the bridge handles that.
+  - **Hashtag suggestions, character stats, Repurpose, and Voice to text** are hidden in non-Threads mode because they are Threads-specific.
+
+  Existing Threads workflows are unchanged.
+
+  ### Known Limitation
+
+  Clicking a non-Threads post in the Calendar still opens the Threads-shaped edit modal. You can edit the body text in that modal, but title, subtitle, and other payload fields are not yet editable from the UI. Use the MCP `update_post` tool to change those for now. A dedicated multi-platform edit modal will land in a follow-up update.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.13" tags={["Feature", "Improvement"]}>
   ### Calendar: Multi-Platform Posts
 
