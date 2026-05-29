@@ -3,6 +3,28 @@ title: Changelog
 description: Release notes and updates for Post Companion.
 ---
 
+<Update label="2026-05-29" description="v2.0.17" tags={["Feature", "Major Release"]}>
+  ### Email: HighLevel (ServeSuite) Send Adapter
+
+  Scheduled emails created in Post Companion now dispatch into HighLevel (ServeSuite) when their scheduled time hits. This is the first non-Threads platform Post Companion publishes to directly.
+
+  - Settings has a new section called "HighLevel (ServeSuite) — Email Sending" where you paste a Private Integration Token plus your Location ID. Optional default From and Reply-To email addresses are also stored.
+  - The PIT field is masked by default. Click the eye icon to reveal.
+  - A Test Connection button verifies the credentials against HighLevel and shows the location name on success or the specific HighLevel error on failure. The last verified timestamp surfaces below the form.
+  - When a scheduled email reaches its publish time, the auto-publish cron dispatches it through the new `send-email-via-ghl` function. The post moves to status `published` on success or `failed` with the error stashed in payload for debugging.
+  - Threads workflows continue exactly as before. The cron just gained an extra branch for emails.
+
+  ### Security Recommendation
+
+  Create the Private Integration Token in HighLevel scoped to `emails.write` only. Broader scopes are not required by this integration and would only widen the blast radius if the token were ever exposed.
+
+  ### Coming Next
+
+  - Per-brand HighLevel integration overrides (today the integration is per-user).
+  - Substack, Instagram, and Facebook send adapters in their respective phases.
+  - Status badges on the post card showing whether the dispatch succeeded.
+</Update>
+
 <Update label="2026-05-29" description="v2.0.16" tags={["Feature", "Improvement"]}>
   ### Calendar: Multi-Platform Edit Modal
 
